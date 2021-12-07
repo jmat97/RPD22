@@ -1,2 +1,2 @@
-# RPM22
-R-peak monitor
+# RPD22
+R-peak detector
