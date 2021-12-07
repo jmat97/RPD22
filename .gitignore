@@ -1,0 +1,4 @@
+/fpga/build/
+vivado/*
+!vivado/Basys3_Oscilloscope_FFT.tcl
+!.gitignore
