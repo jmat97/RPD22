@@ -1,0 +1,11 @@
+test/tb_alg_core/tb_alg_core.sv
+test/tb_alg_core/mitbih_read.sv
+../asic/rtl/moving_avg.sv
+../asic/rtl/alg_core.sv
+../asic/rtl/abs_diff.sv
+../asic/rtl/counter_fsm.sv
+../asic/rtl/qrs_detector.sv
+../asic/rtl/extremum_detector.sv
+../asic/rtl/maximum_hold.sv
+../asic/rtl/alg_fsm.sv
+../asic/rtl/sample_mgmt.sv
