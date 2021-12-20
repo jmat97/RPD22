@@ -1,32 +1,31 @@
 `timescale 1ns / 1ps
-//`default_nettype	none
 
 module	alg_fsm #(
-		parameter DATA_WIDTH = 11,
+        parameter DATA_WIDTH = 11,
         parameter CTR_WIDTH = 24
-	) (
-		input	logic	i_clk,	
-		input	logic	i_nrst,
-		input	logic	i_ce,
-        input   logic   [CTR_WIDTH-1:0] i_ctr,
-        input	logic signed	[DATA_WIDTH-1:0]	i_abs_diff_short_max,
-        input   logic	i_abs_diff_short_valid,
-        input   logic	i_extremum_found,
-        output	logic   o_qrs_search_en,
-        output  logic   [DATA_WIDTH-1:0] o_rr_period,
-        output  logic   [CTR_WIDTH-1:0] o_r_peak_sample_num,
-        output  logic   [DATA_WIDTH-1:0] o_qrs_threshold
+    ) (
+        input	logic                               i_clk,
+        input	logic                               i_nrst,
+        input	logic                               i_ce,
+        input   logic [CTR_WIDTH-1:0]               i_ctr,
+        input	logic signed [DATA_WIDTH-1:0]       i_abs_diff_short_max,
+        input   logic                               i_abs_diff_short_valid,
+        input   logic                               i_extremum_found,
+        output	logic                               o_qrs_search_en,
+        output  logic [DATA_WIDTH-1:0]              o_rr_period,
+        output  logic [CTR_WIDTH-1:0]               o_r_peak_sample_num,
+        output  logic [DATA_WIDTH-1:0]              o_qrs_threshold
 	);
 
 /**
  * Local variables and signals
  */
-    typedef enum logic [2:0] {INIT, ALG_INIT, TH_INIT, RUN, ALG_UPDATE_1,  ALG_UPDATE_2} state_t;
+    typedef enum logic [2:0] {INIT, ALG_INIT, TH_INIT, RUN, ALG_UPDATE_1, ALG_UPDATE_2} state_t;
     state_t state, state_nxt;
 
     logic signed [DATA_WIDTH-1:0]qrs_threshold_prv;
     logic init_period_active, th_initialised, th_updated, init_ctr_start, rr_period_updated, r_peak_sample_updated;
-    
+
     logic [CTR_WIDTH-1:0] r_peak_sample_num_prev, r_peak_sample_num;
 
 /**
@@ -38,10 +37,10 @@ module	alg_fsm #(
  * Submodules placement
  */
     counter_fsm #(
-    .MAX_VAL (360*3), 
+    .MAX_VAL (360*3),
     .MAX_VAL_SIZE(11)
     ) init_counter (
-    .i_clk(i_clk),	
+    .i_clk(i_clk),
     .i_nrst(i_nrst),
     .i_ce(i_ce),
     .i_start(init_ctr_start),
@@ -51,9 +50,9 @@ module	alg_fsm #(
 /**
  * FSM state management
  */
-    always_ff @(posedge i_clk, negedge i_nrst) begin 
+    always_ff @(posedge i_clk, negedge i_nrst) begin
         if (!i_nrst)
-            state <= INIT; 
+            state <= INIT;
         else
             state <= state_nxt;
     end
@@ -121,7 +120,7 @@ module	alg_fsm #(
  * Initialisation counter control
  */
     always @ (posedge i_clk)begin
-        if (!i_nrst) 
+        if (!i_nrst)
             init_ctr_start <= 0;
         else begin
         case (state)
@@ -181,6 +180,6 @@ module	alg_fsm #(
         default:    o_qrs_search_en <= 1'b0;
         endcase
         end
-    end   
+    end
 
 endmodule

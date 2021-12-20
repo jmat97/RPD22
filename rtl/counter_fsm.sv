@@ -1,11 +1,10 @@
 `timescale 1ns / 1ps
-//`default_nettype	none
 
 module	counter_fsm #(
 		parameter MAX_VAL = 0,
         parameter MAX_VAL_SIZE = 0
 	) (
-		input	logic	i_clk,	
+		input	logic	i_clk,
 		input	logic	i_nrst,
 		input	logic	i_ce,
 		input	logic	i_start,
@@ -21,7 +20,7 @@ logic [MAX_VAL_SIZE-1:0] counter;
 always @ (posedge i_clk) begin
     if (!i_nrst) begin
         state <= IDLE;
-    end 
+    end
     else begin
         state <= nxt_state;
     end
@@ -32,10 +31,10 @@ always@(state, i_start, counter)begin
 	case(state)
 		IDLE: begin
             nxt_state <= i_start? COUNT: IDLE;
-        end	
+        end
 		COUNT: begin
             nxt_state <= (counter == (MAX_VAL-1)) ? IDLE : COUNT;
-        end	
+        end
 	endcase
 end
 
@@ -43,14 +42,14 @@ always @ (posedge i_clk) begin
     if (!i_nrst) begin
         counter <= 0;
         o_active <= 0;
-    end 
+    end
     else if (state == COUNT) begin
         counter <= counter + 1;
         o_active <= 1;
     end
     else begin
         counter  <= 0;
-        o_active <= 0;      
+        o_active <= 0;
     end
 end
 
