@@ -60,7 +60,7 @@ end
 		.i_clk(i_clk),
 		.i_nrst(i_nrst),
 		.i_ce(i_ce),
-		.i_start(o_extremum),
+		.i_start(o_extremum_found),
         .o_active(o_refractory_win_active)
 	);
 /**

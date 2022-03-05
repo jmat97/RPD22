@@ -28,7 +28,7 @@ logic signed ma_short_valid, ma_long_valid;
 logic signed abs_diff_short_valid, abs_diff_long_valid;
 logic signed abs_diff_short_max_valid;
 
-logic qrs_win_state, abs_diff_long_extremum, refractory_win_active, qrs_search_en;
+logic qrs_win_state, abs_diff_long_extremum_found, refractory_win_active, qrs_search_en;
 logic [CTR_WIDTH-1:0] ctr;
 
 sample_mgmt #(
@@ -120,7 +120,7 @@ extremum_detector #(
         .i_qrs_win_active(qrs_win_state),
         .i_signal(abs_diff_long),
         .i_signal_valid(abs_diff_long_valid),
-        .o_extremum_found(abs_diff_long_extremum),
+        .o_extremum_found(abs_diff_long_extremum_found),
         .o_refractory_win_active(refractory_win_active)
 );
 
@@ -135,7 +135,7 @@ alg_fsm #(
         .i_ctr(ctr),
         .i_abs_diff_short_max(abs_diff_short_max),
         .i_abs_diff_short_valid(abs_diff_short_valid),
-        .i_extremum_found(abs_diff_long_extremum),
+        .i_extremum_found(abs_diff_long_extremum_found),
         .o_qrs_search_en(qrs_search_en),
         .o_rr_period(rr_period),
         //.o_r_peak_sample_num(),

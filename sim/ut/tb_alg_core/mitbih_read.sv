@@ -31,7 +31,7 @@ initial begin
           if (bytes_read !=0) begin
                matched_items = $sscanf(str, "%d,%d",sample_num,sample);
                if (matched_items==2) begin
-                    $display("sample[%d]:%d",sample_num, sample);
+                    //$display("sample[%d]:%d",sample_num, sample);
                     recording_file[sample_num] = sample;
                end       
           end
