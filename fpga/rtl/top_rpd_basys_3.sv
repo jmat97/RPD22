@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-module top_rpm_basys_3 (
+module top_rpd_basys_3 (
     output logic [7:0] led,
     output logic       sout,
     input logic        clk_io,
@@ -34,7 +34,7 @@ logic                 clk, rst_n, rst_n_generated;
 //soc_gpio_bus          gpio_bus ();
 //soc_pmc_bus           pmc_bus ();
 //soc_spi_bus           spi_bus ();
-//soc_uart_bus          uart_bus ();
+soc_uart_bus          uart_bus ();
 
 //soc_pm_ctrl           pm_ctrl ();
 //soc_pm_data           pm_data ();
@@ -59,8 +59,8 @@ logic                 clk, rst_n, rst_n_generated;
 
 
 
-//assign sout = uart_bus.sout;
-//assign uart_bus.sin = sin;
+assign sout = uart_bus.sout;
+assign uart_bus.sin = sin;
 
 
 /**
@@ -76,16 +76,7 @@ alg_core u_alg_core (
     .rr_period(),
     .r_peak_sample_num()
 );
-/*
-spi_flash_memory u_spi_flash_memory (
-    .miso(spi_bus.miso),
-    .clk,
-    .rst_n,
-    .ss(spi_bus.ss),
-    .sck(spi_bus.sck),
-    .mosi(spi_bus.mosi)
-);
-*/
+
 
 clkgen_xil7series u_clkgen_xil7series (
     .IO_CLK(clk_io),
