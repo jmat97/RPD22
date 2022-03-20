@@ -21,6 +21,7 @@ logic [CTR_WIDTH-1:0] ctr = 0;
 logic [CTR_WIDTH-1:0] r_peak_sample_num;
 
 logic [DATA_WIDTH-1:0] mitbih_data, rr_period;
+logic rr_period_updated;
 logic signed [DATA_WIDTH-1:0] sample_in;
 
 
@@ -69,6 +70,7 @@ alg_core #(
     .ecg_value(sample_in),
     .data_valid(sig_valid),
     .rr_period(rr_period),
+    .rr_period_updated(rr_period_updated),
     .r_peak_sample_num(r_peak_sample_num)
 );
 

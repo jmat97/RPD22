@@ -24,8 +24,8 @@ module uart_controller (
     input logic         i_rx_data_valid,
     output logic        o_tx_data_valid,
     output [2:0]        o_rwaddr,
-    output              o_rd_req,
-    output              o_rw_req
+    output logic        o_rd_req,
+    output logic        o_wr_req
 );
 
 
@@ -39,7 +39,8 @@ module uart_controller (
  * Signals assignments
  */
  
- assign rwaddr = rx_data[3:1];
+ assign o_rwaddr = i_rx_data[3:1];
+ assign o_tx_data_valid = (state == SEND_REG);
 
 /**
  * FSM state management
@@ -74,12 +75,29 @@ module uart_controller (
  */
 
 /**
- * Send data logic
- */ 
- 
- always @(i_clk) begin
-    tx_data <= 
- end
+ * Request logic
+ */
+    always_ff @(posedge i_clk, negedge i_nrst) begin
+        if (!i_nrst) begin
+            o_rd_req <= 1'b0;
+            o_wr_req <= 1'b1;
+            end
+        else
+            case(state)
+            SEND_REG:   begin
+                o_rd_req <= 1'b1;
+                o_wr_req <= 1'b0;
+            end
+            UPDATE_REG: begin
+                o_rd_req <= 1'b0;
+                o_wr_req <= 1'b1;
+            end
+            default: begin
+                o_rd_req <= 1'b0;
+                o_wr_req <= 1'b0;
+            end
+            endcase
+    end
 
 
 endmodule

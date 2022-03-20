@@ -13,6 +13,7 @@ module	alg_fsm #(
         input   logic                               i_extremum_found,
         output	logic                               o_qrs_search_en,
         output  logic [DATA_WIDTH-1:0]              o_rr_period,
+        output  logic                               o_rr_period_updated,
         output  logic [CTR_WIDTH-1:0]               o_r_peak_sample_num,
         output  logic [DATA_WIDTH-1:0]              o_qrs_threshold
 	);
@@ -24,7 +25,7 @@ module	alg_fsm #(
     state_t state, state_nxt;
 
     logic signed [DATA_WIDTH-1:0]qrs_threshold_prv;
-    logic init_period_active, th_initialised, th_updated, init_ctr_start, rr_period_updated, r_peak_sample_updated;
+    logic init_period_active, th_initialised, th_updated, init_ctr_start, r_peak_sample_updated;
 
     logic [CTR_WIDTH-1:0] r_peak_sample_num_prev, r_peak_sample_num;
 
@@ -67,7 +68,7 @@ module	alg_fsm #(
             TH_INIT :       state_nxt = th_initialised ? RUN : TH_INIT;
             RUN:            state_nxt = i_extremum_found ? ALG_UPDATE_1 : RUN;
             ALG_UPDATE_1:   state_nxt = ALG_UPDATE_2;
-            ALG_UPDATE_2:   state_nxt = rr_period_updated & th_updated ? RUN : ALG_UPDATE_2;
+            ALG_UPDATE_2:   state_nxt = o_rr_period_updated & th_updated ? RUN : ALG_UPDATE_2;
         endcase
     end
 
@@ -140,7 +141,7 @@ module	alg_fsm #(
                 r_peak_sample_num_prev <= 11'b0;
                 r_peak_sample_num <= 11'b0;
                 o_rr_period <= 11'b0;
-                rr_period_updated <= 1'b0;
+                o_rr_period_updated <= 1'b0;
         end
         else begin
         case (state)
@@ -149,21 +150,21 @@ module	alg_fsm #(
             r_peak_sample_num <= i_ctr;
             o_rr_period <= o_rr_period;
             r_peak_sample_updated <= 1'b1;
-            rr_period_updated <= 1'b0;
+            o_rr_period_updated <= 1'b0;
         end
         ALG_UPDATE_2 : begin
             r_peak_sample_num_prev <= r_peak_sample_num_prev;
             r_peak_sample_num <= r_peak_sample_num;
             o_rr_period <= calc_rr_period(r_peak_sample_num_prev, r_peak_sample_num, o_rr_period);
             r_peak_sample_updated <= 1'b0;
-            rr_period_updated <= 1'b1;
+            o_rr_period_updated <= 1'b1;
         end
         default : begin
             r_peak_sample_num_prev <= r_peak_sample_num_prev;
             r_peak_sample_num <= r_peak_sample_num;
             o_rr_period <= o_rr_period;
             r_peak_sample_updated <= 1'b0;
-            rr_period_updated <= 1'b0;
+            o_rr_period_updated <= 1'b0;
             end
         endcase
         end

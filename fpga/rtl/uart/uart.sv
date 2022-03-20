@@ -58,7 +58,6 @@ assign ecg_value = {regs.dinhr,regs.dinlr};
 assign alg_rst = regs.cr.rst;
 assign alg_en = regs.cr.en;
 assign src_sel = regs.cr.src_sel;
-assign en = regs.cr.src_sel;
 /**
  * Submodules placement
  */
@@ -100,7 +99,6 @@ uart_controller u_uart_controller (
     .i_nrst(rst_n),
     .i_rx_data(rx_data),
     .i_rx_data_valid(rx_data_valid),
-    .o_tx_data(tx_data),
     .o_tx_data_valid(tx_data_valid),
     .o_rwaddr(rwaddr),
     .o_rd_req(rd_req),
@@ -122,7 +120,7 @@ endfunction
  * Properties and assertions
  */
 
-assert property (@(negedge clk) req |-> is_offset_valid(rwaddr)) else
+assert property (@(negedge clk) is_offset_valid(rwaddr)) else
     $warning("incorrect offset requested: 0x%x", rwaddr);
 
 
@@ -153,21 +151,6 @@ always_comb begin
         endcase
     end
 
-    /* 0x004: status reg */
-    if (rx_error)
-        regs_nxt.sr.rxerr = 1'b1;
-
-    regs_nxt.sr.txact = tx_busy;
-
-    if (rx_data_valid)
-        regs_nxt.sr.rxne = 1'b1;
-    else if (is_reg_read(UART_RDR_OFFSET))
-        regs_nxt.sr.rxne = 1'b0;
-
-    /* 0x00c: receiver data reg */
-    if (rx_data_valid)
-        regs_nxt.rdr.data = rx_data;
-
 
 end
 
@@ -175,14 +158,14 @@ end
 
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        rdata <= 8'b0;
+        tx_data <= 8'b0;
     end else begin
         if (rd_req) begin
             case (rwaddr)
-            UART_CR_OFFSET:     rdata <= regs.cr;
-            UART_SR_OFFSET:     rdata <= regs.sr;
-            UART_DOUTL_OFFSET:  rdata <= regs.doutlr;
-            UART_DOUTH_OFFSET:  rdata <= regs.douthr;
+            UART_CR_OFFSET:     tx_data <= regs.cr;
+            UART_SR_OFFSET:     tx_data <= regs.sr;
+            UART_DOUTL_OFFSET:  tx_data <= regs.doutlr;
+            UART_DOUTH_OFFSET:  tx_data <= regs.douthr;
             endcase
         end
     end

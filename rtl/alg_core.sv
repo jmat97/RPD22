@@ -14,6 +14,7 @@ module alg_core #(
     input   logic signed [DATA_WIDTH-1:0] ecg_value,
     input   logic data_valid,
     output  logic [DATA_WIDTH-1:0] rr_period,
+    output  logic rr_period_updated,
     output  logic [CTR_WIDTH-1:0] r_peak_sample_num
 );
 
@@ -138,6 +139,7 @@ alg_fsm #(
         .i_extremum_found(abs_diff_long_extremum_found),
         .o_qrs_search_en(qrs_search_en),
         .o_rr_period(rr_period),
+        .o_rr_period_updated(rr_period_updated),
         //.o_r_peak_sample_num(),
         .o_qrs_threshold(qrs_threshold)
 
