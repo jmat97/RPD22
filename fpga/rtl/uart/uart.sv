@@ -95,7 +95,18 @@ uart_receiver u_uart_receiver (
     .sin(uart_bus.sin)
 );
 
-
+uart_controller u_uart_controller (
+    .i_clk(clk),
+    .i_nrst(rst_n),
+    .i_rx_data(rx_data),
+    .i_rx_data_valid(rx_data_valid),
+    .o_tx_data(tx_data),
+    .o_tx_data_valid(tx_data_valid),
+    .o_rwaddr(rwaddr),
+    .o_rd_req(rd_req),
+    .o_rw_req(rw_req)
+    
+);
 
 
 /**

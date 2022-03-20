@@ -34,7 +34,7 @@ logic                 clk, rst_n, rst_n_generated;
 //soc_gpio_bus          gpio_bus ();
 //soc_pmc_bus           pmc_bus ();
 //soc_spi_bus           spi_bus ();
-soc_uart_bus          uart_bus ();
+uart_bus          uart_bus ();
 
 //soc_pm_ctrl           pm_ctrl ();
 //soc_pm_data           pm_data ();
