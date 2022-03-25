@@ -17,9 +17,6 @@
 
 interface uart_if (
     output logic       sin,
-    output logic       en,
-    output logic       clk_divider_valid,
-    output logic [7:0] clk_divider,
     output logic       tx_data_valid,
     output logic [7:0] tx_data,
     input logic        clk,
@@ -43,23 +40,8 @@ task init();
     @(negedge clk) ;
     @(posedge rst_n) ;
     sin = 1'b1;
-    en = 1'b0;
-    clk_divider_valid = 1'b0;
-    clk_divider = 8'h00;
 endtask
 
-task set_divider();
-    input int divider;
-begin
-    @(negedge clk) ;
-    clk_divider = divider;
-    clk_divider_valid = 1'b1;
-    en = 1'b1;
-
-    @(negedge clk) ;
-    clk_divider_valid = 1'b0;
-end
-endtask
 
 task send_bit_to_uart();
     input logic data;

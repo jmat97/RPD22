@@ -64,7 +64,11 @@ typedef struct packed {
 
 typedef struct packed {
     logic [2:0]  in_data_h;
-} uart_outh_t;
+} uart_douth_t;
+
+typedef struct packed {
+    logic  in_data_vld;
+} uart_in_data_vld;
 
 typedef struct packed {
     uart_cr_t  cr;
@@ -72,7 +76,8 @@ typedef struct packed {
     uart_dinl_t dinlr;
     uart_dinh_t dinhr;
     uart_doutl_t doutlr;
-    uart_douth_t douthr;    
+    uart_douth_t douthr;
+    uart_in_data_vld din_vld;
 } uart_regs_t;
 
 endpackage
