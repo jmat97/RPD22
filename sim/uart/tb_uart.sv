@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-module tb_uart_receiver ();
+module tb_uart ();
 
 
 /**
@@ -23,11 +23,11 @@ module tb_uart_receiver ();
  */
 
 logic       clk, rst_n;
-logic       busy, error;
-logic [7:0] rx_data;
-logic       sin;
+logic       tx_busy, rx_busy, rx_error;
+logic [7:0] rx_data, tx_data;
+logic       sin, sout;
 logic       sck_rising_edge, sck;
-logic       en, rx_data_valid;
+logic       en, rx_data_valid, tx_data_valid;
 
 logic [7:0] test_vectors [$];
 
@@ -47,18 +47,18 @@ rst_if u_rst_if (
 
 uart_if u_uart_if (
     .sin,
-    .tx_data_valid(),
-    .tx_data(),
+    .tx_data_valid,
+    .tx_data,
     .clk,
     .rst_n,
-    .sout(),
+    .sout,
     .sck,
     .sck_rising_edge,
-    .tx_busy(),
-    .rx_busy(busy),
+    .tx_busy,
+    .rx_busy,
     .rx_data_valid,
     .rx_data,
-    .rx_error(error)
+    .rx_error
 );
 
 
@@ -66,26 +66,21 @@ uart_if u_uart_if (
  * Submodules placement
  */
 
-serial_clock_generator u_serial_clock_generator (
-    .sck,
-    .rising_edge(sck_rising_edge),
-    .falling_edge(),
+uart u_uart(
+    .sin,
+    .sout,
     .clk,
     .rst_n,
-    .en(1'b1)
-);
-
-uart_receiver u_uart_receiver (
-    .busy,
+    .tx_data_valid,
+    .tx_data,
     .rx_data_valid,
     .rx_data,
-    .error,
-    .clk,
-    .rst_n,
-    .sck_rising_edge,
-    .sin
+    .tx_busy,
+    .rx_busy,
+    .rx_error,
+    .sck,
+    .sck_rising_edge
 );
-
 
 /**
  * Tasks and functions definitions
@@ -103,8 +98,8 @@ task test_sending_to_uart();
 begin
     logic [7:0] received_data;
 
-    if (busy)
-        @(negedge busy) ;
+    if (rx_busy)
+        @(negedge rx_busy) ;
 
     u_uart_if.send_data_to_uart(received_data, data);
 
@@ -118,10 +113,7 @@ task test_receiving_from_uart();
 begin
     logic [7:0] received_data;
 
-    if (busy)
-        @(negedge busy) ;
-
-    u_uart_if.send_data_to_uart(received_data, data);
+    u_uart_if.receive_data_from_uart(received_data, data);
 
     assert (received_data == data) else
         $error("received_data: rcv: %x, exp: %x", received_data, data);
@@ -142,7 +134,8 @@ initial begin
     join
 
     foreach (test_vectors[j]) begin
-        test_sending_to_uart(test_vectors[j]);
+        //test_sending_to_uart(test_vectors[j]);
+        test_receiving_from_uart(test_vectors[j]);
     end
 
     $finish;

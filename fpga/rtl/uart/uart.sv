@@ -18,25 +18,21 @@
 import uart_pkg::*;
 
 module uart (
+    input logic         sin,
+    output logic        sout,
     input logic         clk,
     input logic         rst_n,
-    
-    input logic [7:0]   read_data,
-    input logic [10:0]  rr_period,
-    input logic         mas_valid,
-    input logic         mal_valid,
-    input logic         th_inited,
-    input logic         alg_active,
-    input logic         tx_fifo_e,
-    input logic         tx_fifo_f,
-    input logic         rx_fifo_e,
-    input logic         rx_fifo_f,
-    output logic        irq,
-    output logic [10:0] ecg_value,
-    output logic        alg_rst,
-    output logic        alg_en,
-    output logic        src_sel,
-    uart_bus.master     uart_bus
+
+    input logic         tx_data_valid,
+    input logic [7:0]   tx_data,
+    output logic        rx_data_valid,
+    output logic [7:0]  rx_data,
+
+    output logic        tx_busy,
+    output logic        rx_busy,
+    output logic        rx_error,
+    output logic        sck,
+    output logic        sck_rising_edge
 );
 
 
@@ -44,20 +40,13 @@ module uart (
  * Local variables and signals
  */
 
-uart_regs_t regs, regs_nxt;
-logic [7:0] rx_data, tx_data, read_reg_data;
-logic [2:0] rwaddr;
-logic       tx_data_valid, rx_data_valid, tx_busy, rx_error,
-            sck_rising_edge, sck, rd_req, wr_req;
+
 
 
 /**
  * Signals assignments
  */
-assign ecg_value = {regs.dinhr,regs.dinlr};
-assign alg_rst = regs.cr.rst;
-assign alg_en = regs.cr.en;
-assign src_sel = regs.cr.src_sel;
+
 /**
  * Submodules placement
  */
@@ -68,14 +57,12 @@ serial_clock_generator u_serial_clock_generator (
     .falling_edge(),
     .clk,
     .rst_n,
-    .en(1),
-    .clk_divider_valid(0),
-    .clk_divider(0)
+    .en(1'b1)
 );
 
 uart_transmitter u_uart_transmitter (
     .busy(tx_busy),
-    .sout(uart_bus.sout),
+    .sout,
     .clk,
     .rst_n,
     .sck_rising_edge,
@@ -84,91 +71,27 @@ uart_transmitter u_uart_transmitter (
 );
 
 uart_receiver u_uart_receiver (
-    .busy(),
+    .busy(rx_busy),
     .rx_data_valid,
     .rx_data,
     .error(rx_error),
     .clk,
     .rst_n,
     .sck_rising_edge,
-    .sin(uart_bus.sin)
+    .sin
 );
-
-uart_controller u_uart_controller (
-    .i_clk(clk),
-    .i_nrst(rst_n),
-    .i_rx_data(rx_data),
-    .i_rx_data_valid(rx_data_valid),
-    .o_tx_data_valid(tx_data_valid),
-    .o_rwaddr(rwaddr),
-    .o_rd_req(rd_req),
-    .o_rw_req(rw_req)
-    
-);
-
 
 /**
  * Tasks and functions definitions
  */
 
-function automatic logic is_offset_valid(logic [2:0] offset);
-    return offset inside {
-        UART_CR_OFFSET, UART_SR_OFFSET, UART_DINL_OFFSET, UART_DINH_OFFSET, UART_DOUTL_OFFSET, UART_DOUTH_OFFSET
-    };
-endfunction
 /**
  * Properties and assertions
  */
-
-assert property (@(negedge clk) is_offset_valid(rwaddr)) else
-    $warning("incorrect offset requested: 0x%x", rwaddr);
 
 
 /**
  * Module internal logic
  */
-
-/* Registers update */
-
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        regs <= {{7{8'b0}}};
-        //tx_data_valid <= 1'b0;
-    end else begin
-        regs <= regs_nxt;
-        //tx_data_valid <= is_reg_written(UART_TDR_OFFSET);
-    end
-end
-
-always_comb begin
-    regs_nxt = regs;
-
-    if (wr_req) begin
-        case (rwaddr)
-        UART_CR_OFFSET:     regs_nxt.cr = rx_data;
-        UART_DINL_OFFSET:   regs_nxt.dinlr = rx_data;
-        UART_DINH_OFFSET:   regs_nxt.dinhr = rx_data;
-        endcase
-    end
-
-
-end
-
-/* Registers readout */
-
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        tx_data <= 8'b0;
-    end else begin
-        if (rd_req) begin
-            case (rwaddr)
-            UART_CR_OFFSET:     tx_data <= regs.cr;
-            UART_SR_OFFSET:     tx_data <= regs.sr;
-            UART_DOUTL_OFFSET:  tx_data <= regs.doutlr;
-            UART_DOUTH_OFFSET:  tx_data <= regs.douthr;
-            endcase
-        end
-    end
-end
 
 endmodule

@@ -24,8 +24,8 @@ interface uart_if (
     input logic        sout,
     input logic        sck,
     input logic        sck_rising_edge,
-    input logic        transmitter_busy,
-    input logic        receiver_busy,
+    input logic        tx_busy,
+    input logic        rx_busy,
     input logic        rx_data_valid,
     input logic [7:0]  rx_data,
     input logic        rx_error
@@ -38,8 +38,10 @@ interface uart_if (
 
 task init();
     @(negedge clk) ;
-    @(posedge rst_n) ;
+    @(negedge rst_n) ;
     sin = 1'b1;
+    tx_data = 8'b0;
+    tx_data_valid = 1'b0;
 endtask
 
 
@@ -104,8 +106,8 @@ task receive_data_from_uart();
 begin
     logic start_bit, stop_bit;
 
-    if (transmitter_busy)
-        @(negedge transmitter_busy) ;
+    if (tx_busy)
+        @(negedge tx_busy) ;
 
     @(negedge clk) ;
     tx_data = data_to_send;

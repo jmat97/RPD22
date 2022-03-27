@@ -22,9 +22,7 @@ module serial_clock_generator (
 
     input logic       clk,
     input logic       rst_n,
-    input logic       en,
-    input logic       clk_divider_valid,
-    input logic [7:0] clk_divider
+    input logic       en
 );
 
 
@@ -60,12 +58,10 @@ always_comb begin
     sck_nxt = 1'b0;
     rising_edge_nxt = 1'b0;
     falling_edge_nxt = 1'b0;
-    counter_target_nxt = counter_target;
+    counter_target_nxt = 8'd32;
     counter_nxt = 8'b0;
 
-    if (clk_divider_valid) begin
-        counter_target_nxt = clk_divider;
-    end else if (en) begin
+    if (en) begin
         sck_nxt = sck;
         counter_nxt = counter + 1;
 
