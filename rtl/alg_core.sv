@@ -12,7 +12,8 @@ module alg_core #(
     input   logic nrst,
     input   logic ce,
     input   logic signed [DATA_WIDTH-1:0] ecg_value,
-    input   logic data_valid,
+    input   logic ext_data_valid,
+    output  logic ext_data_req,
     output  logic [DATA_WIDTH-1:0] rr_period,
     output  logic rr_period_updated,
     output  logic [CTR_WIDTH-1:0] r_peak_sample_num
@@ -41,8 +42,10 @@ sample_mgmt #(
         .i_nrst(nrst),
         .i_ce(ce),
         .i_new_record(!nrst),
-        .i_signal_valid(data_valid),
-        .ctr(ctr)
+        .i_signal_valid(ext_data_valid),
+        .o_signal_valid(data_valid),
+        .o_signal_req(ext_data_req),
+        .o_ctr(ctr)
     );
 
 moving_avg #(
@@ -53,7 +56,7 @@ moving_avg #(
     moving_avg_inst (
     .i_clk(clk),
     .i_nrst(nrst),
-    .i_ce(ce),
+    .i_ce(data_valid),
     .i_sample(ecg_value),
     .i_sample_valid(data_valid),
     .o_sample(ecg_sample_ma_ad),

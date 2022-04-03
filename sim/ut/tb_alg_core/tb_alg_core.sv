@@ -15,7 +15,7 @@ parameter N_LONG  = 32;
 
 logic clk = 1'b0;
 logic nrst = 1'b0, ce =1'b1;
-logic sig_valid;
+logic sig_valid, mitbih_data_req;
 int sample_counter = 0;
 logic [CTR_WIDTH-1:0] ctr = 0;
 logic [CTR_WIDTH-1:0] r_peak_sample_num;
@@ -33,7 +33,7 @@ end
 always #(CLOCK_PERIOD/2) clk = ~clk;
 
 always @ (posedge clk) begin
-    sample_counter++;  
+    sample_counter++;
     if (sample_counter == NR_OF_SAMPLES)
     $finish;
 end
@@ -47,6 +47,7 @@ mitbih_read #(
     mitbih_read_inst(
     .clk(clk),
     .nrst(nrst),
+    .signal_req(mitbih_data_req),
     .signal_out(mitbih_data),
     .signal_valid(sig_valid)
     //.counter(ctr)
@@ -68,7 +69,8 @@ alg_core #(
     .nrst(nrst),
     .ce(ce),
     .ecg_value(sample_in),
-    .data_valid(sig_valid),
+    .ext_data_req(mitbih_data_req),
+    .ext_data_valid(sig_valid),
     .rr_period(rr_period),
     .rr_period_updated(rr_period_updated),
     .r_peak_sample_num(r_peak_sample_num)
