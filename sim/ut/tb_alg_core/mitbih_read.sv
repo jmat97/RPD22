@@ -58,7 +58,7 @@ initial begin
      counter = 0;
      forever begin
           @(negedge clk) begin
-               if(signal_req) begin
+               if(signal_req & (counter<LENGTH)) begin
                     signal_valid <= 1'b1;
                     signal_out <= recording_file[counter];
                     counter <= counter + 1;

@@ -26,7 +26,7 @@ logic signed [DATA_WIDTH-1:0] sample_in;
 
 
 initial begin
-    #1000 nrst  <= 1'b1;
+    #10 nrst  <= 1'b1;
     //#10 ce    <= 1'b1;
 end
 
@@ -34,7 +34,7 @@ always #(CLOCK_PERIOD/2) clk = ~clk;
 
 always @ (posedge clk) begin
     sample_counter++;
-    if (sample_counter == NR_OF_SAMPLES)
+    if (sample_counter == (NR_OF_SAMPLES+10))
     $finish;
 end
 
@@ -47,15 +47,37 @@ mitbih_read #(
     mitbih_read_inst(
     .clk(clk),
     .nrst(nrst),
+    /*
     .signal_req(mitbih_data_req),
     .signal_out(mitbih_data),
     .signal_valid(sig_valid)
     //.counter(ctr)
+    */
+    .signal_req(!fifo_full),
+    .signal_out(fifo_wdata),
+    .signal_valid(fifo_push)
+);
+
+logic fifo_full, fifo_empty, fifo_push, fifo_rdata_valid, fifo_data_req;
+logic [DATA_WIDTH-1:0] fifo_wdata, fifo_rdata;
+
+fifo #(
+    .SIZE(NR_OF_SAMPLES),
+    .WIDTH(DATA_WIDTH)
+) u_fifo (
+    .clk(clk),
+    .rst_n(nrst),
+    .full(fifo_full),
+    .empty(fifo_empty),
+    .rdata(fifo_rdata),
+    .rdata_valid(fifo_rdata_valid),
+    .push(fifo_push),
+    .pop(!fifo_empty ? fifo_data_req : 1'b0),
+    .wdata(fifo_wdata)
 );
 
 
-
-assign sample_in  = mitbih_data[DATA_WIDTH-1] ? mitbih_data[DATA_WIDTH-2:0] : mitbih_data - DATA_OFFSET;
+assign sample_in  = fifo_rdata[DATA_WIDTH-1] ? fifo_rdata[DATA_WIDTH-2:0] : fifo_rdata - DATA_OFFSET;
 
 alg_core #(
     .DATA_WIDTH(DATA_WIDTH),
@@ -69,11 +91,12 @@ alg_core #(
     .nrst(nrst),
     .ce(ce),
     .ecg_value(sample_in),
-    .ext_data_req(mitbih_data_req),
-    .ext_data_valid(sig_valid),
+    .ext_data_req(fifo_data_req),
+    .ext_data_valid(fifo_rdata_valid),
     .rr_period(rr_period),
     .rr_period_updated(rr_period_updated),
     .r_peak_sample_num(r_peak_sample_num)
 );
+
 
 endmodule
