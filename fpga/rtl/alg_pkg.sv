@@ -22,16 +22,30 @@ package alg_pkg;
  * Patterns used for address decoding (memory map)
  */
 
-parameter   DATA_WIDTH = 11;        /* Width of input data */
-parameter   CTR_WIDTH = 22;         /* Width of sample counter */
-parameter   N_SHORT = 16;           /* Length of moving average short */
-parameter   N_LONG  = 32;           /* Length of moving average long */
-parameter   DATA_OFFSET = 1024;     /* Offset location of zero centerline */
-parameter   DATA_FIFO_SIZE = 650000;/* SIze of incoming data FIFO */
+parameter   DATA_WIDTH = 11;            /* Width of input data */
+parameter   CTR_WIDTH = 22;             /* Width of sample counter */
+parameter   NAVG_SHORT = 16;               /* Length of moving average short */
+parameter   NAVG_LONG  = 32;               /* Length of moving average long */
+parameter   DATA_OFFSET = 1024;         /* Offset location of zero centerline */
+parameter   DIN_FIFO_SIZE = 256;     /* Size of input data FIFO */
+parameter   DOUT_FIFO_SIZE = 100;       /* Size of output data FIFO */
+parameter   ACQUISITION_RATE = 360;     /* Freguency of ADC data acquisition */
+parameter   SYSTEM_CLK = 100_000_000;   /* System clock */
 /**
  * User defined types
  */
 
+typedef enum logic  {
+    ECG_SRC_UART = 1'b0,
+    ECG_SRC_ADC = 1'b1
+} ecg_src;
 
+typedef logic [DATA_WIDTH-1:0]  ecg_sample;
+typedef logic [CTR_WIDTH-1:0]   sample_num;
+
+
+typedef struct packed {
+    logic [7:0]  in_data_l;
+} uart_dinl_t;
 
 endpackage
