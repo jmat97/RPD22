@@ -2,6 +2,7 @@
 
 module tb_command_manager();
 
+import uart_pkg::*;
 
 logic   clk, rst_n;
 logic   rd_req, wr_req, rx_data_valid, tx_data_valid;

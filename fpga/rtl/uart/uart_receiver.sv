@@ -16,14 +16,14 @@
  */
 
 module uart_receiver (
-    output logic       busy,
-    output logic       rx_data_valid,
-    output logic [7:0] rx_data,
-    output logic       error,
-    input logic        clk,
-    input logic        rst_n,
-    input logic        sck_rising_edge,
-    input logic        sin
+    output logic    busy,
+    output logic    rx_data_valid,
+    output byte     rx_data,
+    output logic    error,
+    input logic     clk,
+    input logic     rst_n,
+    input logic     sck_rising_edge,
+    input logic     sin
 );
 
 

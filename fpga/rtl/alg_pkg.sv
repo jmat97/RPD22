@@ -1,4 +1,4 @@
- /**
+/**
  * Copyright (C) 2020  AGH University of Science and Technology
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,22 +15,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-interface clk_if (
-    output logic clk
-);
+package alg_pkg;
 
 
 /**
- * Tasks and functions definitions
+ * Patterns used for address decoding (memory map)
  */
 
-function void init();
-    clk = 1'b0;
-endfunction
+parameter   DATA_WIDTH = 11;        /* Width of input data */
+parameter   CTR_WIDTH = 22;         /* Width of sample counter */
+parameter   N_SHORT = 16;           /* Length of moving average short */
+parameter   N_LONG  = 32;           /* Length of moving average long */
+parameter   DATA_OFFSET = 1024;     /* Offset location of zero centerline */
+parameter   DATA_FIFO_SIZE = 650000;/* SIze of incoming data FIFO */
+/**
+ * User defined types
+ */
 
-task run();
-    forever
-        clk = #50 ~clk;
-endtask
 
-endinterface
+
+endpackage

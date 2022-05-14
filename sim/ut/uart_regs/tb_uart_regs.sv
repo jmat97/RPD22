@@ -2,6 +2,7 @@
 
 module tb_uart_regs();
 
+import uart_pkg::*;
 
 logic   clk, rst_n;
 logic   rd_req,
@@ -70,13 +71,16 @@ initial begin
     apply_data();
     $asserton;
     #200;
-    write_reg(UART_CR_OFFSET, 8'hAA);
+    //write_reg(UART_CR_OFFSET, 8'hAA);
     #20;
-    read_reg(UART_DOUTL_OFFSET);
+    read_reg(UART_SR_OFFSET);
     #40;
+    read_reg(UART_DOUTH_OFFSET);
+    /*
     write_reg(UART_DINL_OFFSET, 8'hFF);
     #20;
     write_reg(UART_DINH_OFFSET, 8'h07);
+    */
     #20;
     $display("nice");
     $finish;

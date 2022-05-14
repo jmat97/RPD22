@@ -20,15 +20,16 @@ import uart_pkg::*;
 module command_manager (
     input logic         i_clk,
     input logic         i_rst_n,
-    input logic [7:0]   i_read_reg,
-    input logic [7:0]   i_rx_data,
+    input byte          i_read_reg,
+    input byte          i_rx_data,
     input logic         i_rx_data_valid,
-    output logic [7:0]  o_write_reg,
-    output logic [7:0]  o_tx_data,
+    output byte         o_write_reg,
+    output byte         o_tx_data,
     output logic        o_tx_data_valid,
-    output logic [2:0]  o_rwaddr,
+    output reg_rwaddr   o_rwaddr,
     output logic        o_rd_req,
-    output logic        o_wr_req
+    output logic        o_wr_req,
+    output logic        o_fifo_fetch
 );
 
 
@@ -38,9 +39,11 @@ module command_manager (
     typedef enum logic [2:0] {INIT, IDLE, DECODE, READ_REG, GET_DATA, WRITE_REG, TRANSMIT_REG} state_t;
     state_t state, state_nxt;
 
+    reg_rwaddr rwaddr;
 /**
  * Signals assignments
  */
+assign rwaddr = reg_rwaddr'(i_rx_data[3:1]);
 
  //assign o_rwaddr = i_rx_data[3:1];
  //assign o_tx_data_valid = (state == READ_REG);
@@ -62,9 +65,10 @@ module command_manager (
         case (state)
             INIT:       state_nxt = IDLE;
             IDLE:       state_nxt = i_rx_data_valid ? DECODE : IDLE;
-            DECODE:     state_nxt = i_rx_data[0] ? GET_DATA : TRANSMIT_REG;
+            DECODE:     state_nxt = i_rx_data[0] ? GET_DATA : READ_REG;
             GET_DATA    :state_nxt = i_rx_data_valid ? WRITE_REG : GET_DATA;
             WRITE_REG:  state_nxt = IDLE;
+            READ_REG:   state_nxt = TRANSMIT_REG;
             TRANSMIT_REG:   state_nxt = IDLE;
         endcase
     end
@@ -88,7 +92,8 @@ module command_manager (
             o_write_reg <= 8'b0;
             o_tx_data <= 8'b0;
             o_tx_data_valid <= 1'b0;
-            o_rwaddr <= 3'b0;
+            o_rwaddr <= o_rwaddr;
+            o_fifo_fetch <= 1'b0;
             end
         else
             case(state)
@@ -98,7 +103,8 @@ module command_manager (
                 o_write_reg <= 8'b0;
                 o_tx_data <= 8'b0;
                 o_tx_data_valid <= 1'b0;
-                o_rwaddr <= 3'b0; ;
+                o_rwaddr <= o_rwaddr;
+                o_fifo_fetch <= 1'b0;
             end
             IDLE:   begin
                 o_rd_req <= 1'b0;
@@ -107,6 +113,7 @@ module command_manager (
                 o_tx_data <= o_tx_data;
                 o_tx_data_valid <= 1'b0;
                 o_rwaddr <= o_rwaddr;
+                o_fifo_fetch <= 1'b0;
             end
             DECODE:   begin
                 o_rd_req <= !i_rx_data[0];
@@ -114,7 +121,8 @@ module command_manager (
                 o_write_reg <= 8'b0;
                 o_tx_data <= 8'b0;
                 o_tx_data_valid <= 1'b0;
-                o_rwaddr <= i_rx_data[3:1];
+                o_rwaddr <= rwaddr;
+                o_fifo_fetch <= (rwaddr == UART_DOUTL_OFFSET);
             end
             GET_DATA:   begin
                 o_rd_req <= o_rd_req;
@@ -123,6 +131,7 @@ module command_manager (
                 o_tx_data <= o_tx_data;
                 o_tx_data_valid <= o_tx_data_valid;
                 o_rwaddr <= o_rwaddr;
+                o_fifo_fetch <= 1'b0;
             end
             TRANSMIT_REG:   begin
                 o_rd_req <= 1'b0;
@@ -131,6 +140,16 @@ module command_manager (
                 o_tx_data <= i_read_reg;
                 o_tx_data_valid <= 1'b1;
                 o_rwaddr <= o_rwaddr;
+                o_fifo_fetch <= 1'b0;
+            end
+            READ_REG:   begin
+                o_rd_req <= 1'b0;
+                o_wr_req <= 1'b0;
+                o_write_reg <= 8'b0;
+                o_tx_data <= 8'b0;
+                o_tx_data_valid <= 1'b0;
+                o_rwaddr <= o_rwaddr;
+                o_fifo_fetch <= 1'b0;
             end
             WRITE_REG:  begin
                 o_rd_req <= 1'b0;
@@ -139,6 +158,7 @@ module command_manager (
                 o_tx_data <= 8'b0;
                 o_tx_data_valid <= 1'b0;
                 o_rwaddr <= o_rwaddr;
+                o_fifo_fetch <= 1'b0;
             end
             default: begin
                 o_rd_req <= 1'b0;
@@ -146,7 +166,8 @@ module command_manager (
                 o_write_reg <= 8'b0;
                 o_tx_data <= 8'b0;
                 o_tx_data_valid <= 1'b0;
-                o_rwaddr <= 3'b0; ;
+                o_rwaddr <= o_rwaddr;
+                o_fifo_fetch <= 1'b0;
             end
             endcase
     end

@@ -14,8 +14,10 @@ module	alg_fsm #(
         output	logic                               o_qrs_search_en,
         output  logic [DATA_WIDTH-1:0]              o_rr_period,
         output  logic                               o_rr_period_updated,
-        output  logic [CTR_WIDTH-1:0]               o_r_peak_sample_num,
-        output  logic [DATA_WIDTH-1:0]              o_qrs_threshold
+        output  logic [CTR_WIDTH-1:0]               o_r_peak_location,
+        output  logic [DATA_WIDTH-1:0]              o_qrs_threshold,
+        output  logic                               o_th_initialised,
+        output  logic                               o_alg_active
 	);
 
 /**
@@ -32,7 +34,8 @@ module	alg_fsm #(
 /**
  * Signals assignments
  */
-    assign o_r_peak_sample_num = r_peak_sample_num;
+    assign o_r_peak_location = r_peak_sample_num;
+    assign o_alg_active = state != INIT;
 
 /**
  * Submodules placement
@@ -98,7 +101,7 @@ module	alg_fsm #(
             ALG_UPDATE_1 : begin
                 qrs_threshold_prv <= o_qrs_threshold;
                 o_qrs_threshold <= update_th(o_qrs_threshold, i_abs_diff_short_max);
-                
+
                 $display("%d,%d, %d",qrs_threshold_prv, i_abs_diff_short_max, o_qrs_threshold);
                 th_initialised <= th_initialised;
                 th_updated <= 1'b0;

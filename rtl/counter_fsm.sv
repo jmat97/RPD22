@@ -11,10 +11,9 @@ module	counter_fsm #(
         output  logic   o_active
 	);
 
-parameter IDLE  = 1'b0;
-parameter COUNT = 1'b1;
+typedef enum logic  {IDLE, COUNT} state_t;
 
-logic [1:0] state, nxt_state;
+state_t state, nxt_state;
 logic [MAX_VAL_SIZE-1:0] counter;
 
 always @ (posedge i_clk) begin

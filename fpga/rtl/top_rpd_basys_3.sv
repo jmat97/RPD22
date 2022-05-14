@@ -16,25 +16,35 @@
  */
 
 module top_rpd_basys_3 (
-    output logic [7:0] led,
-    output logic       sout,
-    input logic        clk_io,
-    input logic        sw,
-    input logic        btnC,
-    input logic        sin
+    output  logic [15:0]    led,
+    output  logic           sout,
+    output  logic           sout_spy,
+    input   logic           clk_io,
+    input   logic [15:0]    sw,
+    input   logic           btnC,
+    input   logic           sin,
+    output  logic           sin_spy,
+    input   logic           xa4_n,
+    input   logic           xa4_p,
+    output  logic           sck_re,
+    output  logic           sck_spy
 );
 
-
+import alg_pkg::*;
 /**
  * Local variables and signals
  */
 
-logic                 clk, rst_n, rst_n_generated;
+logic   clk, rst_n, rst_n_generated, adc_en;
+
+logic [16-1:0] adc_raw;
+ecg_sample ecg_adc_sample;
+logic sin_int;
 
 //soc_gpio_bus          gpio_bus ();
 //soc_pmc_bus           pmc_bus ();
 //soc_spi_bus           spi_bus ();
-uart_bus          uart_bus ();
+//uart_bus          uart_bus ();
 
 //soc_pm_ctrl           pm_ctrl ();
 //soc_pm_data           pm_data ();
@@ -45,6 +55,21 @@ uart_bus          uart_bus ();
 /**
  * Signals assignments
  */
+assign sck_re = u_top_core.u_uart.sck_rising_edge;
+assign  sck_spy = u_top_core.u_uart.sck;
+
+assign rst_n = ~(btnC | ~locked);
+assign ecg_adc_sample = adc_raw[15:5];
+assign led = {7'b0,u_top_core.rx_busy,u_top_core.rx_data};
+
+//assign sin_int = sin;
+assign sin_spy = sin_int;
+assign sout_spy = sout;
+
+  IBUF io_clk_ibuf(
+    .I (sin),
+    .O (sin_int)
+  );
 
 //assign led[7] = !gpio_bus.oe_n[15] ? gpio_bus.dout[15] : 1'b0;  /* bootloader finished */
 //assign led[6:4] = 3'b0;
@@ -59,37 +84,73 @@ uart_bus          uart_bus ();
 
 
 
-assign sout = uart_bus.sout;
-assign uart_bus.sin = sin;
+//assign sout = uart_bus.sout;
+//assign uart_bus.sin = sin;
 
 
 /**
  * Submodules placement
  */
 
-alg_core u_alg_core (
-    .clk,
-    .nrst(rst_n & rst_n_generated),
-    .ce(1'b1),
-    .ecg_value(11'b1),
-    .data_valid(1'b1),
-    .rr_period(),
-    .r_peak_sample_num()
-);
-
-
-clkgen_xil7series u_clkgen_xil7series (
-    .IO_CLK(clk_io),
-    .IO_RST_N(~btnC),
-    .clk_sys(clk),
-    .rst_sys_n(rst_n)
-);
-
+clk_wiz_0 u_clk_wiz_0
+   (
+    // Clock out ports
+    .clk_100MHz(clk_100MHz),     // output clk_100MHz
+    .clk_36MHz(clk_36MHz),     // output clk_36MHz
+    .clk_10MHz(),     // output clk_10MHz
+    // Status and control signals
+    .reset(btnC), // input reset
+    .locked(locked),       // output locked
+   // Clock in ports
+    .clk_in1(clk_io)     // input clk_in1
+    );
+/*
 reset_generator u_reset_generator (
     .rst_n_generated,
     .clk,
-    .rst_n
-    //.trigger(gpio_bus.dout[31])
+    .rst_n,
+    .trigger(~btnc))
 );
+*/
+xadc_wiz_0 u_xadc_wiz_0(
+    .m_axis_aclk(clk_100MHz),
+    .s_axis_aclk(clk_100MHz),
+    .m_axis_resetn(rst_n),
+    .m_axis_tvalid(m_axis_tvalid),
+    .m_axis_tready(adc_en),
+    .m_axis_tdata(adc_raw),
+    .m_axis_tid(),
+    .convst_in(adc_convst),
+    .vp_in(1'b0),
+    .vn_in(1'b0),
+    .vauxp15(xa4_p),
+    .vauxn15(xa4_n),
+    .channel_out(),
+    .eoc_out(),
+    .alarm_out(),
+    .eos_out(),
+    .busy_out(adc_busy)
+    );
+
+
+
+top_core u_top_core (
+    .i_clk_100MHz(clk_100MHz),
+    .i_clk_36MHz(clk_36MHz),
+    .o_sout(sout),
+    .i_sin(sin_int),
+    .i_nrst(rst_n),
+
+    .i_adc_data(ecg_adc_sample),
+    .i_adc_data_rdy(m_axis_tvalid),
+    .i_adc_busy(busy),
+    .o_adc_convst(adc_convst),
+    .o_adc_en(adc_en)
+);
+
+
+
+
+
 
 endmodule

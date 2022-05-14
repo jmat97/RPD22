@@ -54,7 +54,6 @@ module uart (
 serial_clock_generator u_serial_clock_generator (
     .sck,
     .rising_edge(sck_rising_edge),
-    .falling_edge(),
     .clk,
     .rst_n,
     .en(1'b1)

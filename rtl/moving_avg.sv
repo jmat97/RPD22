@@ -2,33 +2,33 @@
 //`default_nettype	none
 
 module	moving_avg #(
-		parameter	DATA_WIDTH = 11,		
+		parameter	DATA_WIDTH = 11,
 		parameter	NAVG_LONG = 32,
 		parameter	NAVG_LONG_WIDTH = $clog2(NAVG_LONG+1),
 		parameter	NAVG_SHORT = 16,
 		parameter	NAVG_SHORT_WIDTH = $clog2(NAVG_SHORT+1)
 	) (
-		input	logic	i_clk,	
-		input	logic	i_nrst,
-		input	logic	i_ce,	
-		input	logic signed	[DATA_WIDTH-1:0]	i_sample,
-		input   logic i_sample_valid,
-		output	logic signed	[DATA_WIDTH-1:0]	o_sample,
-		output	logic signed	[DATA_WIDTH-1:0]	o_ma_long,
-		output	logic signed	[DATA_WIDTH-1:0]	o_ma_short,
-		output  logic	o_ma_long_valid, 
-		output  logic	o_ma_short_valid
+		input	logic							i_clk,
+		input	logic							i_nrst,
+		input	logic							i_ce,
+		input	logic signed [DATA_WIDTH-1:0]	i_sample,
+		input   logic 							i_sample_valid,
+		output	logic signed [DATA_WIDTH-1:0]	o_sample,
+		output	logic signed [DATA_WIDTH-1:0]	o_ma_long,
+		output	logic signed [DATA_WIDTH-1:0]	o_ma_short,
+		output  logic							o_ma_long_valid,
+		output  logic							o_ma_short_valid
 	);
 
-	logic	full_long, full_short, a_full_long, a_full_short, delta_long_valid, delta_short_valid, acc_long_valid, acc_short_valid;
-	logic	unsigned [NAVG_LONG_WIDTH-2:0]	rdaddr_long, rdaddr_short, wraddr;
-	logic	signed [DATA_WIDTH-1:0]		mem [0:NAVG_LONG-1];
-	logic	signed [DATA_WIDTH-1:0]		preval_long, memval_long, sample, 
+	logic full_long, full_short, a_full_long, a_full_short, delta_long_valid, delta_short_valid, acc_long_valid, acc_short_valid;
+	logic unsigned [NAVG_LONG_WIDTH-2:0]	rdaddr_long, rdaddr_short, wraddr;
+	logic signed [DATA_WIDTH-1:0]		mem [0:NAVG_LONG-1];
+	logic signed [DATA_WIDTH-1:0]		preval_long, memval_long, sample,
 									preval_short, memval_short,
 									sample_del1, sample_del2, sample_del3;
-	logic	signed [DATA_WIDTH-1:0]	delta_long, delta_short;
-	logic	signed [DATA_WIDTH+NAVG_LONG-1:0] acc_long;
-	logic	signed [DATA_WIDTH+NAVG_SHORT-1:0]  acc_short;
+	logic signed [DATA_WIDTH-1:0]	delta_long, delta_short;
+	logic signed [DATA_WIDTH+NAVG_LONG-1:0] acc_long;
+	logic signed [DATA_WIDTH+NAVG_SHORT-1:0] acc_short;
 
 	assign sample = i_sample_valid ? i_sample : 0;
 
@@ -74,7 +74,7 @@ module	moving_avg #(
 		if (i_ce) begin
 			memval_long <= mem[rdaddr_long];
 			memval_short <= mem[rdaddr_short];
-		end 
+		end
 	end
 
 	always @(posedge i_clk) begin
@@ -194,12 +194,12 @@ module	moving_avg #(
 			end
 			else begin
 				o_ma_short <= 0;
-				o_ma_short_valid <= 0;				
+				o_ma_short_valid <= 0;
 			end
 		end
 	end
 
-    //Input signal delay 
+    //Input signal delay
 	always @(posedge i_clk) begin
 		if (!i_nrst) begin
 			sample_del1 <= 0;

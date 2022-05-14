@@ -134,8 +134,8 @@ initial begin
     join
 
     foreach (test_vectors[j]) begin
-        //test_sending_to_uart(test_vectors[j]);
-        test_receiving_from_uart(test_vectors[j]);
+        test_sending_to_uart(test_vectors[j]);
+        //test_receiving_from_uart(test_vectors[j]);
     end
 
     $finish;

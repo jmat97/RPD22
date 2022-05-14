@@ -22,16 +22,28 @@ package uart_pkg;
  * Patterns used for address decoding (memory map)
  */
 
-const logic [2:0]   UART_CR_OFFSET = 3'd0,       /* Control Reg offset */
-                    UART_SR_OFFSET =  3'd1,      /* Status Reg offset */
-                    UART_DINL_OFFSET =  3'd2,    /*Input Data Low Reg offset */
-                    UART_DINH_OFFSET =  3'd3,    /*Input Data High Reg offset */
-                    UART_DOUTL_OFFSET =  3'd4,   /*Output Data Low Reg offset */
-                    UART_DOUTH_OFFSET =  3'd5;   /*Output Data High Reg offset */
+parameter   UART_CR_OFFSET = 0;      /* Control Reg offset */
+parameter   UART_SR_OFFSET = 1;      /* Status Reg offset */
+parameter   UART_DINL_OFFSET = 2;    /*Input Data Low Reg offset */
+parameter   UART_DINH_OFFSET = 3;    /*Input Data High Reg offset */
+parameter   UART_DOUTL_OFFSET = 4;   /*Output Data Low Reg offset */
+parameter   UART_DOUTM_OFFSET = 5;   /*Output Data Mid Reg offset */
+parameter   UART_DOUTH_OFFSET = 6;   /*Output Data High Reg offset */
 
 /**
  * User defined types
  */
+
+typedef enum {
+    CR = UART_CR_OFFSET,/* Control Reg offset */
+    SR = UART_SR_OFFSET,/* Status Reg offset */
+    DINL = UART_DINL_OFFSET,/*Input Data Low Reg offset */
+    DINH = UART_DINH_OFFSET,/*Input Data High Reg offset */
+    DOUTL = UART_DOUTL_OFFSET,/*Output Data Low Reg offset */
+    DOUTM = UART_DOUTM_OFFSET,/*Output Data Middle Reg offset */
+    DOUTH = UART_DOUTH_OFFSET/*Output Data High Reg offset */
+} reg_rwaddr;
+
 
 typedef struct packed {
     logic       rst;
@@ -59,11 +71,15 @@ typedef struct packed {
 } uart_dinh_t;
 
 typedef struct packed {
-    logic [7:0]  in_data_l;
+    logic [7:0]  out_data_l;
 } uart_doutl_t;
 
 typedef struct packed {
-    logic [2:0]  in_data_h;
+    logic [7:0]  out_data_m;
+} uart_doutm_t;
+
+typedef struct packed {
+    logic [2:0]  out_data_h;
 } uart_douth_t;
 
 typedef struct packed {
@@ -76,6 +92,7 @@ typedef struct packed {
     uart_dinl_t dinlr;
     uart_dinh_t dinhr;
     uart_doutl_t doutlr;
+    uart_doutm_t doutmr;
     uart_douth_t douthr;
     uart_in_data_vld din_vld;
 } uart_regs_t;

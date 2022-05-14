@@ -20,9 +20,9 @@ import uart_pkg::*;
 module uart_regs (
     input logic         i_clk,
     input logic         i_rst_n,
-    input logic [2:0]   i_rwaddr,
-    input logic [7:0]   i_write_data,
-    input logic [10:0]  i_rr_period,
+    input reg_rwaddr    i_rwaddr,
+    input byte          i_write_data,
+    input sample_num    i_r_peak_sample_num,
     input logic         i_rd_req,
     input logic         i_wr_req,
     input logic         i_mas_valid,
@@ -33,12 +33,12 @@ module uart_regs (
     input logic         i_tx_fifo_f,
     input logic         i_rx_fifo_e,
     input logic         i_rx_fifo_f,
-    output logic [7:0]  o_read_data,
-    output logic [10:0] o_ecg_value,
+    output byte         o_read_data,
+    output ecg_sample   o_ecg_value,
     output logic        o_ecg_value_vld,
     output logic        o_alg_rst,
     output logic        o_alg_en,
-    output logic        o_src_sel
+    output ecg_src      o_src_sel
 );
 
 
@@ -55,20 +55,21 @@ uart_regs_t regs, regs_nxt;
 assign o_ecg_value = {regs.dinhr,regs.dinlr};
 assign o_alg_rst = regs.cr.rst;
 assign o_alg_en = regs.cr.en;
-assign o_src_sel = regs.cr.src_sel;
+assign o_src_sel = ecg_src'(regs.cr.src_sel);
 assign o_ecg_value_vld = regs.din_vld;
 
 /**
  * Tasks and functions definitions
  */
 
-function automatic logic is_offset_valid(input logic [2:0] offset);
+function automatic logic is_offset_valid(input reg_rwaddr offset);
     return offset inside {
         UART_CR_OFFSET,
         UART_SR_OFFSET,
         UART_DINL_OFFSET,
         UART_DINH_OFFSET,
         UART_DOUTL_OFFSET,
+        UART_DOUTM_OFFSET,
         UART_DOUTH_OFFSET
     };
 endfunction
@@ -110,8 +111,9 @@ always_comb begin
     end
     else begin
         regs_nxt.din_vld = 1'b0;
-        regs_nxt.doutlr = i_rr_period[7:0];
-        regs_nxt.douthr = i_rr_period[10:8];
+        regs_nxt.doutlr = i_r_peak_sample_num[7:0];
+        regs_nxt.doutmr = i_r_peak_sample_num[15:8];
+        regs_nxt.douthr = {2'b0, i_r_peak_sample_num[CTR_WIDTH-1:16]};
         regs_nxt.sr.ma_s_vld = i_mas_valid;
         regs_nxt.sr.ma_l_vld = i_mal_valid;
         regs_nxt.sr.th_inited = i_th_inited;
@@ -134,6 +136,7 @@ always_ff @(posedge i_clk or negedge i_rst_n) begin
             UART_CR_OFFSET:     o_read_data <= regs.cr;
             UART_SR_OFFSET:     o_read_data <= regs.sr;
             UART_DOUTL_OFFSET:  o_read_data <= regs.doutlr;
+            UART_DOUTM_OFFSET:  o_read_data <= regs.doutmr;
             UART_DOUTH_OFFSET:  o_read_data <= regs.douthr;
             endcase
         end
