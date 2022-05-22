@@ -88,14 +88,25 @@ top_rpd_basys_3 u_top_rpd_basys_3(
 
 initial begin
     byte read_byte;
+    sin <= 1'b1;
     u_rst_if.init();
     u_rst_if.reset();
-    sin <= 1'b1;
+
 
     //send_ecg_value(mitbih_data);
-
+    #100;
     read_reg(UART_SR_OFFSET, read_byte);
-    #100000;
+    $display("%x", read_byte);
+  for (int i = 0; i < 60; ++i) begin
+        write_reg(UART_DINH_OFFSET, 8'hff);
+        end
+    read_reg(UART_SR_OFFSET, read_byte);
+    send_bit_to_uart(1'b1);
+
+    //send_ecg_value(2047);
+    //read_reg(UART_SR_OFFSET, read_byte);
+    //$display(read_byte);
+    #100;
     $finish;
 /*
     foreach (test_vectors[j]) begin

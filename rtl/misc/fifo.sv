@@ -72,6 +72,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         last_write <= 1'b0;
         rdata_valid <= 1'b0;
     end else begin
+        rdata_valid <= 1'b0;
         case ({pop, push})
         2'b00: ;
         2'b01: begin

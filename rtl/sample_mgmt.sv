@@ -31,10 +31,10 @@ module	sample_mgmt #(
 /**
  * Local variables and signals
  */
-typedef enum logic [2:0] {INIT, IDLE, SAMPLE_REQ, WAIT, SAMPLE_VALID} state_t;
+typedef enum logic [2:0] {INIT, IDLE, SAMPLE_REQ, SAMPLE_WAIT, SAMPLE_VALID} state_t;
 state_t state, state_nxt;
 logic [CTR_WIDTH-1:0] ctr;
-logic data_valid, data_req, adc_req, fifo_req, req_available;
+logic data_valid, data_req, adc_req, fifo_req, req_possible;
 logic [DATA_WIDTH-1:0] ecg_signal;
 /**
  * FSM state management
@@ -56,10 +56,10 @@ always_comb begin
         if(i_new_record)
             state_nxt = INIT;
         else
-            state_nxt = req_available ? SAMPLE_REQ : IDLE;
+            state_nxt = req_possible ? SAMPLE_REQ : IDLE;
     end
-    SAMPLE_REQ:     state_nxt = WAIT;
-    WAIT:           state_nxt = data_valid ? SAMPLE_VALID : WAIT;
+    SAMPLE_REQ:     state_nxt = SAMPLE_WAIT;
+    SAMPLE_WAIT:    state_nxt = data_valid ? SAMPLE_VALID : SAMPLE_WAIT;
     SAMPLE_VALID:   state_nxt = IDLE;
     endcase
 end
@@ -76,9 +76,10 @@ always_comb begin
 end
 */
 always_comb begin
+    ctr = o_ctr;
     case(state)
     INIT:           ctr = '0;
-    SAMPLE_VALID:   ctr = ctr++;
+    SAMPLE_VALID:   ctr = ctr+1;
     default:        ctr = ctr;
     endcase
 end
@@ -103,7 +104,7 @@ always_ff @( posedge i_clk) begin
     end
     else begin
         o_ctr <= ctr;
-        o_ecg_signal <= ecg_signal;
+        o_ecg_signal <= (state_nxt == SAMPLE_WAIT) ? ecg_signal : o_ecg_signal;
         o_ecg_signal_valid <= data_valid;
         o_adc_convst <= adc_req;
         o_fifo_req <= fifo_req;
@@ -119,21 +120,23 @@ always_comb begin
     case(i_ecg_src)
     ECG_SRC_ADC: begin
         adc_req = i_clk_adc_convst;
+        fifo_req = fifo_req;
         ecg_signal = convert_to_signed(i_adc_data);
-        req_available = !i_adc_busy;
+        req_possible = !i_adc_busy;
         data_valid = i_adc_rd_valid;
    end
     ECG_SRC_UART:   begin
+        adc_req = adc_req;
         fifo_req  = data_req;
         ecg_signal = convert_to_signed(i_fifo_data);
-        req_available = !i_fifo_empty;
+        req_possible = !i_fifo_empty;
         data_valid = i_fifo_rd_valid;
     end
     default: begin
         adc_req = 1'b0;
         fifo_req  = 1'b0;
         ecg_signal = 'b0;;
-        req_available = 1'b0;
+        req_possible = 1'b0;
         data_valid = 1'b0;;
     end
     endcase

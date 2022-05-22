@@ -63,13 +63,14 @@ assign rwaddr = reg_rwaddr'(i_rx_data[3:1]);
  */
     always_comb begin
         case (state)
-            INIT:       state_nxt = IDLE;
-            IDLE:       state_nxt = i_rx_data_valid ? DECODE : IDLE;
-            DECODE:     state_nxt = i_rx_data[0] ? GET_DATA : READ_REG;
-            GET_DATA    :state_nxt = i_rx_data_valid ? WRITE_REG : GET_DATA;
-            WRITE_REG:  state_nxt = IDLE;
-            READ_REG:   state_nxt = TRANSMIT_REG;
+            INIT:           state_nxt = IDLE;
+            IDLE:           state_nxt = i_rx_data_valid ? DECODE : IDLE;
+            DECODE:         state_nxt = i_rx_data[0] ? GET_DATA : READ_REG;
+            GET_DATA:       state_nxt = i_rx_data_valid ? WRITE_REG : GET_DATA;
+            WRITE_REG:      state_nxt = IDLE;
+            READ_REG:       state_nxt = TRANSMIT_REG;
             TRANSMIT_REG:   state_nxt = IDLE;
+            default:        state_nxt = IDLE;
         endcase
     end
 

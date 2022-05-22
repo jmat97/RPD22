@@ -48,10 +48,10 @@ logic fifo_full, fifo_empty, fifo_rdata_valid, fifo_data_req;
 ecg_sample fifo_rdata;
 ecg_src ecg_data_src;
 logic alg_rst;
-sample_num r_peak_sample_num;
-logic dout_fifo_pop;
-logic [DATA_WIDTH-1:0]  din_fifo_rdata, ecg_value;
-
+logic dout_fifo_pop, new_record;
+logic [DATA_WIDTH-1:0]  din_fifo_rdata, ecg_signal, ecg_value;
+logic [CTR_WIDTH-1:0]   dout_fifo_rdata, r_peak_sample_num, rr_period;
+logic [CTR_WIDTH-1:0]   ctr;
 logic clk_360Hz;
 //soc_gpio_bus          gpio_bus ();
 //soc_pmc_bus           pmc_bus ();
@@ -68,6 +68,8 @@ logic clk_360Hz;
  * Signals assignments
  */
 
+assign new_record = 1'b0;
+assign o_adc_en = 1'b1;
 //assign led[7] = !gpio_bus.oe_n[15] ? gpio_bus.dout[15] : 1'b0;  /* bootloader finished */
 //assign led[6:4] = 3'b0;
 //assign led[3] = !gpio_bus.oe_n[3] ? gpio_bus.dout[3] : 1'b0;
@@ -106,8 +108,6 @@ uart u_uart(
     .tx_busy,
     .rx_busy,
     .rx_error
-    //.sck(),
-    //.sck_rising_edge()
 
 /*
     .clk(i_clk_100MHz), // The master clock for this module
@@ -217,12 +217,13 @@ alg_core #(
     alg_core_inst(
     .i_clk(i_clk_100MHz),
     .i_nrst(i_nrst),
-    .i_ce(alg_en),
-    .i_ecg_signal(sample_in),
+    .i_ce(1'b1),
+    .i_ecg_signal(ecg_signal),
     .i_ecg_signal_valid(ecg_signal_valid),
     .o_rr_period(rr_period),
     .o_rr_period_updated(out_data_updated),
     .o_r_peak_location(r_peak_sample_num),
+    .i_ctr(ctr),
     .o_ma_long_valid(ma_long_valid),
     .o_ma_short_valid(ma_short_valid),
     .o_th_initialised(th_initialised),

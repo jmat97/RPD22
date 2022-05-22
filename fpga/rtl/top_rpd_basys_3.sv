@@ -55,12 +55,12 @@ logic sin_int;
 /**
  * Signals assignments
  */
-assign sck_re = u_top_core.u_uart.sck_rising_edge;
-assign  sck_spy = u_top_core.u_uart.sck;
+//assign sck_re = u_top_core.u_uart.sck_rising_edge;
+//assign  sck_spy = u_top_core.u_uart.sck;
 
 assign rst_n = ~(btnC | ~locked);
 assign ecg_adc_sample = adc_raw[15:5];
-assign led = {7'b0,u_top_core.rx_busy,u_top_core.rx_data};
+assign led = {u_top_core.u_uart_regs.regs.sr, 5'b0 ,u_top_core.u_uart_regs.regs.cr};
 
 //assign sin_int = sin;
 assign sin_spy = sin_int;
@@ -143,7 +143,7 @@ top_core u_top_core (
 
     .i_adc_data(ecg_adc_sample),
     .i_adc_data_rdy(m_axis_tvalid),
-    .i_adc_busy(busy),
+    .i_adc_busy(adc_busy),
     .o_adc_convst(adc_convst),
     .o_adc_en(adc_en)
 );

@@ -90,10 +90,12 @@ initial begin
     u_rst_if.reset();
     sin <= 1'b1;
 
-    send_ecg_value(mitbih_data);
+  for (int i = 0; i < 1000; ++i) begin
+        write_reg(UART_DINH_OFFSET, 8'hff);
+        end
 
     //read_reg(UART_SR_OFFSET, read_byte);
-    #1000;
+    #100;
     $finish;
 /*
     foreach (test_vectors[j]) begin

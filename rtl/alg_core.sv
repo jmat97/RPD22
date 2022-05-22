@@ -13,9 +13,10 @@ module alg_core #(
     input   logic                           i_ce,
     input   logic signed [DATA_WIDTH-1:0]   i_ecg_signal,
     input   logic                           i_ecg_signal_valid,
-    output  logic [DATA_WIDTH-1:0]          o_rr_period,
+    output  logic [CTR_WIDTH-1:0]           o_rr_period,
     output  logic                           o_rr_period_updated,
     output  logic [CTR_WIDTH-1:0]           o_r_peak_location,
+    input   logic [CTR_WIDTH-1:0]           i_ctr,
     output  logic                           o_ma_long_valid,
     output  logic                           o_ma_short_valid,
     output  logic                           o_th_initialised,
@@ -34,7 +35,6 @@ logic signed abs_diff_short_valid, abs_diff_long_valid;
 logic signed abs_diff_short_max_valid;
 logic [CTR_WIDTH-1:0] rr_period;
 logic qrs_win_state, abs_diff_long_extremum_found, refractory_win_active, qrs_search_en;
-logic [CTR_WIDTH-1:0] ctr;
 
 assign o_ma_long_valid = ma_long_valid;
 assign o_ma_short_valid = ma_short_valid;
@@ -47,7 +47,7 @@ moving_avg #(
     moving_avg_inst (
         .i_clk,
         .i_nrst,
-        .i_ce,
+        .i_ce(i_ecg_signal_valid),
         .i_sample(i_ecg_signal),
         .i_sample_valid(i_ecg_signal_valid),
         .o_sample(ecg_sample_ma_ad),
@@ -127,12 +127,12 @@ alg_fsm #(
         .i_clk,
         .i_nrst,
         .i_ce,
-        .i_ctr(ctr),
+        .i_ctr(i_ctr),
         .i_abs_diff_short_max(abs_diff_short_max),
         .i_abs_diff_short_valid(abs_diff_short_valid),
         .i_extremum_found(abs_diff_long_extremum_found),
         .o_qrs_search_en(qrs_search_en),
-        .o_rr_period(rr_period),
+        .o_rr_period(o_rr_period),
         .o_rr_period_updated(o_rr_period_updated),
         .o_r_peak_location(o_r_peak_location),
         .o_qrs_threshold(qrs_threshold),

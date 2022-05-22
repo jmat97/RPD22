@@ -30,9 +30,7 @@ module uart (
 
     output logic        tx_busy,
     output logic        rx_busy,
-    output logic        rx_error,
-    output logic        sck,
-    output logic        sck_rising_edge
+    output logic        rx_error
 );
 
 
@@ -52,7 +50,7 @@ module uart (
  */
 
 serial_clock_generator u_serial_clock_generator (
-    .sck,
+    .sck(),
     .rising_edge(sck_rising_edge),
     .clk,
     .rst_n,
