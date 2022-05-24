@@ -18,6 +18,7 @@ parameter BIT_PERIOD = 8625; //1/baudrate in ns
 //Algorithm parameters
 parameter N_SHORT = 16;
 parameter N_LONG  = 32;
+parameter PATH = "100.csv";
 
 logic clk;
 logic rst_n, ce =1'b1;
@@ -33,9 +34,6 @@ logic signed [DATA_WIDTH-1:0] sample_in;
 logic sin, sout;
 logic clk_io;
 
-
-
-
 rst_if u_rst_if (
     .rst_n,
     .clk(clk_io)
@@ -48,21 +46,14 @@ always @ (posedge clk) begin
     $finish;
 end
 */
-/*
-mitbih_read #(
+
+mitbih_read_to_mem #(
     .PATH(PATH),
     .LENGTH(NR_OF_SAMPLES),
-    .DATA_WIDTH(DATA_WIDTH),
-    .CTR_WIDTH(CTR_WIDTH)
+    .DATA_WIDTH(DATA_WIDTH)
     )
-    mitbih_read_inst(
-    .clk(clk),
-    .nrst(nrst),
-    .signal_req(1'b1),
-    .signal_out(read_sample),
-    .signal_valid()
-);
-*/
+    u_mitbih_read_to_mem();
+
 logic [15:0]    led;
 logic [15:0]    sw;
 
@@ -92,37 +83,25 @@ initial begin
     u_rst_if.init();
     u_rst_if.reset();
 
-
     //send_ecg_value(mitbih_data);
     #100;
     read_reg(UART_SR_OFFSET, read_byte);
-    $display("%x", read_byte);
-  for (int i = 0; i < 60; ++i) begin
-        write_reg(UART_DINH_OFFSET, 8'hff);
-        end
-    read_reg(UART_SR_OFFSET, read_byte);
+    
+    //send_ecg_value(11'd1011);
+    
+    //$display("%x", read_byte);
+    for (int i = 0; i < 60; ++i) begin
+        send_ecg_value(u_mitbih_read_to_mem.recording_file[i]);
+    end
+    //read_reg(UART_SR_OFFSET, read_byte);
     send_bit_to_uart(1'b1);
-
+    
     //send_ecg_value(2047);
     //read_reg(UART_SR_OFFSET, read_byte);
     //$display(read_byte);
     #100;
     $finish;
-/*
-    foreach (test_vectors[j]) begin
-        //test_sending_to_uart(test_vectors[j]);
-        test_receiving_from_uart(test_vectors[j]);
-    end
 
-    $finish;
-
-    UART_CR_OFFSET =
-UART_SR_OFFSET =
-UART_DINL_OFFSET
-UART_DINH_OFFSET
-UART_DOUTL_OFFSET
-UART_DOUTH_OFFSET
-    */
 end
 
 
@@ -137,16 +116,15 @@ initial begin
     end
 end
 
-/**
- * Testbench tasks
- */
 
 task send_ecg_value();
     input   logic [DATA_WIDTH-1:0]  ecg_value;
 begin
     uart_sr_t status_reg;
-    read_reg(UART_SR_OFFSET, status_reg);
-    if( !status_reg.tx_fifo_full & !status_reg.rx_fifo_full ) begin
+    $display("ecg: %b", ecg_value);
+    //read_reg(UART_SR_OFFSET, status_reg);
+    //if( !status_reg.tx_fifo_full & !status_reg.rx_fifo_full ) begin
+    if( 1 ) begin
         write_reg(UART_DINL_OFFSET, ecg_value[7:0]);
         write_reg(UART_DINH_OFFSET, {5'b0, ecg_value[10:8]});
     end
@@ -174,7 +152,6 @@ task write_reg();
     input   byte        wdata;
 begin
     send_byte_to_uart({4'b0,waddr,1'b1});
-    #(10*BIT_PERIOD);
     send_byte_to_uart(wdata);
 end
 endtask
@@ -230,3 +207,15 @@ end
 endtask
 
 endmodule
+
+
+/*
+    $finish;
+
+UART_CR_OFFSET =
+UART_SR_OFFSET =
+UART_DINL_OFFSET
+UART_DINH_OFFSET
+UART_DOUTL_OFFSET
+UART_DOUTH_OFFSET
+    */

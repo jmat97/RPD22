@@ -1,16 +1,18 @@
 `timescale 1ns / 1ps
 
 module	extremum_detector #(
-        parameter DATA_WIDTH = 11
+        parameter DATA_WIDTH = 11,
+        parameter CTR_WIDTH = 22
 	) (
-        input	logic	i_clk,
-        input	logic	i_nrst,
-        input	logic	i_ce,
-        input	logic	i_qrs_win_active,
-        input	logic signed [DATA_WIDTH-1:0]       i_signal,
-        input   logic   i_signal_valid,
-        output  logic   o_extremum_found,
-        output  logic   o_refractory_win_active
+        input	logic	                        i_clk,
+        input	logic	                        i_nrst,
+        input	logic	                        i_ce,
+        input   logic [CTR_WIDTH-1:0]           i_ctr,
+        input	logic	                        i_qrs_win_active,
+        input	logic signed [DATA_WIDTH-1:0]   i_signal,
+        input   logic                           i_signal_valid,
+        output  logic                           o_extremum_found,
+        output  logic                           o_refractory_win_active
 	);
 /**
  * Local variables and signals
@@ -53,13 +55,15 @@ end
 /**
  *
  */
+	
     counter_fsm #(
-		.MAX_VAL (72),
-        .MAX_VAL_SIZE(7)
+		.COUNT_VALUE(72),
+        .CTR_WIDTH(CTR_WIDTH)
     ) refractory_win_counter (
-		.i_clk(i_clk),
+		.i_clk(i_clk),	
 		.i_nrst(i_nrst),
 		.i_ce(i_ce),
+		.i_ctr(i_ctr),
 		.i_start(o_extremum_found),
         .o_active(o_refractory_win_active)
 	);
