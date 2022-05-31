@@ -78,7 +78,7 @@ top_rpd_basys_3 u_top_rpd_basys_3(
  */
 
 initial begin
-    byte read_byte;
+    byte read_byte, datal, datam, datah;
     sin <= 1'b1;
     u_rst_if.init();
     u_rst_if.reset();
@@ -86,20 +86,32 @@ initial begin
     //send_ecg_value(mitbih_data);
     #100;
     read_reg(UART_SR_OFFSET, read_byte);
-    
+
     //send_ecg_value(11'd1011);
-    
+
     //$display("%x", read_byte);
-    for (int i = 0; i < 60; ++i) begin
+    for (int i = 0; i < 390; ++i) begin
         send_ecg_value(u_mitbih_read_to_mem.recording_file[i]);
     end
-    //read_reg(UART_SR_OFFSET, read_byte);
+
+    read_reg(UART_SR_OFFSET, read_byte);
+    read_reg(UART_DOUTL_OFFSET, datal);
+    read_reg(UART_DOUTM_OFFSET, datam);
+    read_reg(UART_DOUTH_OFFSET, datah);
+    read_reg(UART_SR_OFFSET, read_byte);
+
+
+
+    read_reg(UART_DOUTL_OFFSET, datal);
+    read_reg(UART_DOUTM_OFFSET, datam);
+    read_reg(UART_DOUTH_OFFSET, datah);
+    read_reg(UART_SR_OFFSET, read_byte);
+
     send_bit_to_uart(1'b1);
-    
+
     //send_ecg_value(2047);
     //read_reg(UART_SR_OFFSET, read_byte);
     //$display(read_byte);
-    #100;
     $finish;
 
 end
@@ -121,9 +133,6 @@ task send_ecg_value();
     input   logic [DATA_WIDTH-1:0]  ecg_value;
 begin
     uart_sr_t status_reg;
-    $display("ecg: %b", ecg_value);
-    //read_reg(UART_SR_OFFSET, status_reg);
-    //if( !status_reg.tx_fifo_full & !status_reg.rx_fifo_full ) begin
     if( 1 ) begin
         write_reg(UART_DINL_OFFSET, ecg_value[7:0]);
         write_reg(UART_DINH_OFFSET, {5'b0, ecg_value[10:8]});

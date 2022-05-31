@@ -22,7 +22,7 @@ module uart_regs (
     input logic         i_rst_n,
     input reg_rwaddr    i_rwaddr,
     input byte          i_write_data,
-    input sample_num    i_r_peak_sample_num,
+    input sample_num    i_rpeak_sample_num,
     input logic         i_rd_req,
     input logic         i_wr_req,
     input logic         i_mas_valid,
@@ -111,9 +111,9 @@ always_comb begin
     end
     else begin
         regs_nxt.din_vld = 1'b0;
-        regs_nxt.doutlr = i_r_peak_sample_num[7:0];
-        regs_nxt.doutmr = i_r_peak_sample_num[15:8];
-        regs_nxt.douthr = {2'b0, i_r_peak_sample_num[CTR_WIDTH-1:16]};
+        regs_nxt.doutlr = i_rpeak_sample_num[7:0];
+        regs_nxt.doutmr = i_rpeak_sample_num[15:8];
+        regs_nxt.douthr = {2'b0, i_rpeak_sample_num[CTR_WIDTH-1:16]};
         regs_nxt.sr.ma_s_vld = i_mas_valid;
         regs_nxt.sr.ma_l_vld = i_mal_valid;
         regs_nxt.sr.th_inited = i_th_inited;

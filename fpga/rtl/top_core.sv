@@ -50,7 +50,7 @@ ecg_src ecg_data_src;
 logic alg_rst;
 logic dout_fifo_pop, new_record;
 logic [DATA_WIDTH-1:0]  din_fifo_rdata, ecg_signal, ecg_value;
-logic [CTR_WIDTH-1:0]   dout_fifo_rdata, r_peak_sample_num, rr_period;
+logic [CTR_WIDTH-1:0]   dout_fifo_rdata, rpeak_sample_num, rr_period;
 logic [CTR_WIDTH-1:0]   ctr;
 logic clk_360Hz;
 //soc_gpio_bus          gpio_bus ();
@@ -108,21 +108,8 @@ uart u_uart(
     .tx_busy,
     .rx_busy,
     .rx_error
-
-/*
-    .clk(i_clk_100MHz), // The master clock for this module
-    .rst(~i_nrst), // Synchronous reset.
-    .rx(i_sin), // Incoming serial line
-    .tx(o_sout), // Outgoing serial line
-    .transmit(tx_data_valid), // Signal to transmit
-    .tx_byte(tx_data), // Byte to transmit
-    .received(rx_data_valid), // Indicated that a byte has been received.
-    .rx_byte(rx_data), // Byte received
-    .is_receiving(rx_busy), // Low when receive line is idle.
-    .is_transmitting(tx_busy), // Low when transmit line is idle.
-    .recv_error(rx_error) // Indicates error in receiving packet.
-    */
 );
+
 command_manager u_command_manager(
     .i_clk(i_clk_100MHz),
     .i_rst_n(i_nrst),
@@ -138,13 +125,12 @@ command_manager u_command_manager(
     .o_fifo_fetch(dout_fifo_pop)
 );
 
-
 uart_regs u_uart_regs(
     .i_clk(i_clk_100MHz),
     .i_rst_n(i_nrst),
     .i_rwaddr(rw_addr),
     .i_write_data(write_reg),
-    .i_r_peak_sample_num(dout_fifo_rdata),
+    .i_rpeak_sample_num(dout_fifo_rdata),
     .i_rd_req(rd_req),
     .i_wr_req(wr_req),
     .i_mas_valid(ma_short_valid),
@@ -178,8 +164,6 @@ fifo #(
     .wdata(ecg_value)
 );
 
-
-
 sample_mgmt #(
         .DATA_WIDTH(DATA_WIDTH),
         .CTR_WIDTH(CTR_WIDTH)
@@ -206,7 +190,6 @@ sample_mgmt #(
         .o_ctr(ctr)
     );
 
-
 alg_core #(
     .DATA_WIDTH(DATA_WIDTH),
     .CTR_WIDTH(CTR_WIDTH),
@@ -222,7 +205,7 @@ alg_core #(
     .i_ecg_signal_valid(ecg_signal_valid),
     .o_rr_period(rr_period),
     .o_rr_period_updated(out_data_updated),
-    .o_r_peak_location(r_peak_sample_num),
+    .o_rpeak_location(rpeak_sample_num),
     .i_ctr(ctr),
     .o_ma_long_valid(ma_long_valid),
     .o_ma_short_valid(ma_short_valid),
@@ -243,7 +226,7 @@ fifo #(
     .rdata_valid(dout_fifo_rdata_valid),
     .push(out_data_updated),
     .pop(dout_fifo_pop),
-    .wdata(r_peak_sample_num)
+    .wdata(rpeak_sample_num)
 );
 
 

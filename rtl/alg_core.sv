@@ -15,7 +15,7 @@ module alg_core #(
     input   logic                           i_ecg_signal_valid,
     output  logic [CTR_WIDTH-1:0]           o_rr_period,
     output  logic                           o_rr_period_updated,
-    output  logic [CTR_WIDTH-1:0]           o_r_peak_location,
+    output  logic [CTR_WIDTH-1:0]           o_rpeak_location,
     input   logic [CTR_WIDTH-1:0]           i_ctr,
     output  logic                           o_ma_long_valid,
     output  logic                           o_ma_short_valid,
@@ -136,7 +136,7 @@ alg_fsm #(
         .o_qrs_search_en(qrs_search_en),
         .o_rr_period(o_rr_period),
         .o_rr_period_updated(o_rr_period_updated),
-        .o_r_peak_location(o_r_peak_location),
+        .o_rpeak_location(o_rpeak_location),
         .o_qrs_threshold(qrs_threshold),
         .o_th_initialised(o_th_initialised),
         .o_alg_active(o_alg_active)

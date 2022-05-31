@@ -21,8 +21,12 @@ from rpd_modules.serial_interface import rpd_serial_interface
 from rpd_modules.regs import *
 import wfdb
 import matplotlib.pyplot as plt
+import numpy as np
 
 class rpd_controller:
+
+    output_res = np.array([], dtype=np.uint32)
+
     def __init__(self):
         self.close_requested = 0
         self.serial_interface = rpd_serial_interface('COM6', 115200, 1)
@@ -33,7 +37,6 @@ class rpd_controller:
                 "R": addr.value[0]<<1,
                 "W": (addr.value[0]<<1) | 1,
             } [tran_type.value]
-
 
     def read(self):
         return self.serial_interface.read(1)
@@ -66,6 +69,7 @@ class rpd_controller:
         doutl = self.read_reg(rpd_reg_addr.DOUTL)
         doutm = self.read_reg(rpd_reg_addr.DOUTM)
         douth = self.read_reg(rpd_reg_addr.DOUTH)
+        print("{:02X}{:02X}{:02X}".format(douth, doutm, doutl))
         return (douth << 16) | (doutm << 8) | doutl
 
     def read_reg_bit(self, reg, field):
@@ -111,34 +115,61 @@ class rpd_controller:
             control_reg = control_reg & ~CR_field.EN.value
         self.write_CR([control_reg])
 
+    def collect_dout(self):
+        sr = rpd_controller.read_SR()
+        #print(rpd_controller.is_tx_fifo_e(sr))
+        while rpd_controller.is_tx_fifo_e(sr) ==0:
+            self.output_res = np.append(self.output_res,  rpd_controller.read_DOUT())
+            #print(self.output_res)
+            sr = rpd_controller.read_SR()
+            if rpd_controller.is_tx_fifo_e(sr):
+                break
+
+
+
+
 if __name__ == "__main__":
     rpd_controller = rpd_controller()
+
+    path = 'tools/mit_bih_arrhythmia_database/100'
+    record = wfdb.rdrecord(path)
+    record.adc(inplace=True)
+
+    #for i in range(record.sig_len):
+    #    data = record.d_signal[i][0]
+    #    print(data)
     print("hedsfsllo")
     #arr = (1024).to_bytes()
     #ecg_valueL = bytes([255])
     rpd_controller.sel_src(sig_src.UART)
-    rpd_controller.sel_alg_state(alg_state.ENABLED)
-    rpd_controller.sel_alg_state(alg_state.DISABLED)
+    #rpd_controller.sel_alg_state(alg_state.ENABLED)
+    #rpd_controller.sel_alg_state(alg_state.DISABLED)
     #time.sleep(5)
     sr = rpd_controller.read_SR()
     print("{:b}".format(sr))
-    print(rpd_controller.is_alg_active(sr))
-    print(rpd_controller.is_th_initialised(sr))
-    print(rpd_controller.is_tx_fifo_e(sr))
-    for i in range(360*4):
-        rpd_controller.write_DIN(2047)
+    print("Algorithm status: {:b}".format(rpd_controller.is_alg_active(sr)))
+    print("Threshold status: {:b}".format(rpd_controller.is_th_initialised(sr)))
+    print("TX fifo E status: {:b}".format(rpd_controller.is_tx_fifo_e(sr)))
+    for i in range(700):
+        rpd_controller.write_DIN(record.d_signal[i][0])
+        if (i % 300 == 0):
+            rpd_controller.collect_dout()
+            print("_")
         #print(rpd_controller.is_rx_fifo_e(rpd_controller.read_SR()))
+    print("outside")
+    rpd_controller.collect_dout()
     sr = rpd_controller.read_SR()
+    #print(rpd_controller.collect_dout.size)
     print("{:b}".format(sr))
-    print(rpd_controller.is_alg_active(sr))
-    print(rpd_controller.is_th_initialised(sr))
-    print(rpd_controller.is_tx_fifo_e(sr))
-    sr = rpd_controller.read_SR()
-    print(rpd_controller.read_DOUT())
-    print(rpd_controller.is_tx_fifo_e(sr))
-    sr = rpd_controller.read_SR()
-    print(rpd_controller.read_DOUT())
-    print(rpd_controller.is_tx_fifo_e(sr))
+    print("Algorithm status: {:b}".format(rpd_controller.is_alg_active(sr)))
+    print("Threshold status: {:b}".format(rpd_controller.is_th_initialised(sr)))
+    print("TX fifo E status: {:b}".format(rpd_controller.is_tx_fifo_e(sr)))
+    #sr = rpd_controller.read_SR()
+    #print("DOUT: {:h}",rpd_controller.read_DOUT())
+    #print("TX fifo E status: {:b}".format(rpd_controller.is_tx_fifo_e(sr)))
+    #sr = rpd_controller.read_SR()
+    #print("DOUT: {:h}",rpd_controller.read_DOUT())
+    #print("TX fifo E status: {:b}".format(rpd_controller.is_tx_fifo_e(sr)))
     #time.sleep(5)
     #print(rpd_controller.addr_to_frame(rpd_reg_addr.SR,transaction_type.R))
     #print(rpd_controller.addr_to_frame(rpd_reg_addr.SR,transaction_type.W))

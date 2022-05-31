@@ -32,11 +32,7 @@ end
 
 always #(CLOCK_PERIOD/2) clk = ~clk;
 
-always @ (posedge clk) begin
-    sample_counter++;
-    if (sample_counter == (NR_OF_SAMPLES+10))
-    $finish;
-end
+
 
 mitbih_read #(
     .PATH(PATH),
@@ -47,19 +43,11 @@ mitbih_read #(
     mitbih_read_inst(
     .clk(clk),
     .nrst(nrst),
-    /*
-    .signal_req(mitbih_data_req),
-    .signal_out(mitbih_data),
-    .signal_valid(sig_valid)
-    //.counter(ctr)
-    */
+    .counter(),
     .signal_req(!fifo_full),
-    .signal_out(fifo_wdata),
-    .signal_valid(fifo_push)
+    .signal_out(din_fifo_wdata),
+    .signal_valid(din_fifo_push)
 );
-
-logic fifo_full, fifo_empty, fifo_push, fifo_rdata_valid, fifo_data_req;
-logic [DATA_WIDTH-1:0] fifo_wdata, fifo_rdata;
 
 fifo #(
     .SIZE(NR_OF_SAMPLES),
@@ -68,34 +56,70 @@ fifo #(
     .clk(clk),
     .rst_n(nrst),
     .full(fifo_full),
-    .empty(fifo_empty),
-    .rdata(fifo_rdata),
-    .rdata_valid(fifo_rdata_valid),
-    .push(fifo_push),
-    .pop(!fifo_empty ? fifo_data_req : 1'b0),
-    .wdata(fifo_wdata)
+    .empty(din_fifo_empty),
+    .rdata(din_fifo_rdata),
+    .rdata_valid(din_fifo_rdata_valid),
+    .push(din_fifo_push),
+    .pop(din_fifo_req),
+    .wdata(din_fifo_wdata)
 );
 
 
-assign sample_in  = fifo_rdata[DATA_WIDTH-1] ? fifo_rdata[DATA_WIDTH-2:0] : fifo_rdata - DATA_OFFSET;
+logic din_fifo_full, din_fifo_empty, din_fifo_push, din_fifo_rdata_valid, din_fifo_data_req;
+logic [DATA_WIDTH-1:0] din_fifo_wdata, din_fifo_rdata;
+logic [DATA_WIDTH-1:0] ecg_signal;
+logic ecg_signal_valid;
+
+sample_mgmt #(
+        .DATA_WIDTH(DATA_WIDTH),
+        .CTR_WIDTH(CTR_WIDTH)
+    )
+    sample_mgmt_inst (
+        .i_clk(clk),
+        .i_nrst(nrst),
+        .i_clk_adc_convst('0),
+        .i_ecg_src(ECG_SRC_UART),
+        .i_new_record('0),
+        /* FIFO */
+        .o_fifo_req(din_fifo_req),
+        .i_fifo_data(din_fifo_rdata),
+        .i_fifo_empty(din_fifo_empty),
+        .i_fifo_rd_valid(din_fifo_rdata_valid),
+        /* ADC */
+        .o_adc_convst(),
+        .i_adc_data('0),
+        .i_adc_busy('0),
+        .i_adc_rd_valid('0),
+
+        .o_ecg_signal(ecg_signal),
+        .o_ecg_signal_valid(ecg_signal_valid),
+        .o_ctr(ctr)
+    );
+
+
 
 alg_core #(
     .DATA_WIDTH(DATA_WIDTH),
     .CTR_WIDTH(CTR_WIDTH),
     .DATA_OFFSET(DATA_OFFSET),
-    .N_SHORT(N_SHORT),
-    .N_LONG(N_LONG)
+    .NAVG_SHORT(N_SHORT),
+    .NAVG_LONG(N_LONG)
     )
     alg_core_inst(
-    .clk(clk),
-    .nrst(nrst),
-    .ce(ce),
-    .ecg_value(sample_in),
-    .ext_data_req(fifo_data_req),
-    .ext_data_valid(fifo_rdata_valid),
-    .rr_period(rr_period),
-    .rr_period_updated(rr_period_updated),
-    .r_peak_sample_num(r_peak_sample_num)
+    .i_clk(clk),
+    .i_nrst(nrst),
+    .i_ce(ce),
+    .i_ecg_signal(ecg_signal),
+    .i_ecg_signal_valid(ecg_signal_valid),
+    .o_rr_period(rr_period),
+    .o_rr_period_updated(rr_period_updated),
+    .o_rpeak_location(r_peak_sample_num),
+    .i_ctr(ctr),
+    .o_ma_long_valid(),
+    .o_ma_short_valid(),
+    .o_th_initialised(),
+    .o_alg_active()
+
 );
 
 

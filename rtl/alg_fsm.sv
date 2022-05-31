@@ -14,7 +14,7 @@ module	alg_fsm #(
         output  logic                               o_qrs_search_en,
         output  logic [DATA_WIDTH-1:0]              o_rr_period,
         output  logic                               o_rr_period_updated,
-        output  logic [CTR_WIDTH-1:0]               o_r_peak_location,
+        output  logic [CTR_WIDTH-1:0]               o_rpeak_location,
         output  logic [DATA_WIDTH-1:0]              o_qrs_threshold,
         output  logic                               o_th_initialised,
         output  logic                               o_alg_active
@@ -26,13 +26,15 @@ module	alg_fsm #(
 typedef enum logic [2:0] {INIT, ALG_INIT, TH_INIT, RUN, ALG_UPDATE_1, ALG_UPDATE_2} state_t;
 state_t state, state_nxt;
 logic signed [DATA_WIDTH-1:0]qrs_threshold_prv;
-logic th_updated, r_peak_sample_updated;
-logic [CTR_WIDTH-1:0] r_peak_sample_num_prev, r_peak_sample_num, ctr_init_target, ctr_init_target_nxt;
+logic th_updated;
+logic [CTR_WIDTH-1:0] rpeak_sample_num_prev, rpeak_sample_num, ctr_init_target, ctr_init_target_nxt;
+logic [CTR_WIDTH-1:0] rr_period_updated, rr_period_updated_del;
 
 /**
  * Signals assignments
  */
-assign o_r_peak_location = r_peak_sample_num;
+assign o_rpeak_location = rpeak_sample_num;
+assign o_rr_period_updated = rr_period_updated & rr_period_updated_del;
 assign o_alg_active = state != INIT;
 
 
@@ -41,7 +43,7 @@ assign o_alg_active = state != INIT;
  */
 always_comb begin
     case (state)
-    INIT: ctr_init_target_nxt = i_ctr + 'd1080; // 3s worth of samples
+    INIT: ctr_init_target_nxt = i_ctr + 'd100; // 3s worth of samples
     default: ctr_init_target_nxt = ctr_init_target_nxt;
     endcase
 end
@@ -73,7 +75,7 @@ always_comb begin
     TH_INIT :       state_nxt = o_th_initialised ? RUN : TH_INIT;
     RUN:            state_nxt = i_extremum_found ? ALG_UPDATE_1 : RUN;
     ALG_UPDATE_1:   state_nxt = ALG_UPDATE_2;
-    ALG_UPDATE_2:   state_nxt = o_rr_period_updated & th_updated ? RUN : ALG_UPDATE_2;
+    ALG_UPDATE_2:   state_nxt = rr_period_updated & th_updated ? RUN : ALG_UPDATE_2;
     default:        state_nxt = INIT;
     endcase
 end
@@ -129,33 +131,34 @@ end
  */
 always @ (posedge i_clk)begin
     if (!i_nrst) begin
-        r_peak_sample_num_prev <= 11'b0;
-        r_peak_sample_num <= 11'b0;
+        rpeak_sample_num_prev <= 11'b0;
+        rpeak_sample_num <= 11'b0;
         o_rr_period <= 11'b0;
-        o_rr_period_updated <= 1'b0;
+        rr_period_updated <= 1'b0;
+        rr_period_updated_del <= 22'b0;
     end
     else begin
     case (state)
     ALG_UPDATE_1 : begin
-        r_peak_sample_num_prev <= r_peak_sample_num;
-        r_peak_sample_num <= i_ctr;
+        rpeak_sample_num_prev <= rpeak_sample_num;
+        rpeak_sample_num <= i_ctr;
         o_rr_period <= o_rr_period;
-        r_peak_sample_updated <= 1'b1;
-        o_rr_period_updated <= 1'b0;
+        rr_period_updated <= 1'b0;
+        rr_period_updated_del <= rr_period_updated;
     end
     ALG_UPDATE_2 : begin
-        r_peak_sample_num_prev <= r_peak_sample_num_prev;
-        r_peak_sample_num <= r_peak_sample_num;
-        o_rr_period <= calc_rr_period(r_peak_sample_num_prev, r_peak_sample_num, o_rr_period);
-        r_peak_sample_updated <= 1'b0;
-        o_rr_period_updated <= 1'b1;
+        rpeak_sample_num_prev <= rpeak_sample_num_prev;
+        rpeak_sample_num <= rpeak_sample_num;
+        o_rr_period <= calc_rr_period(rpeak_sample_num_prev, rpeak_sample_num, o_rr_period);
+        rr_period_updated <= 1'b1;
+        rr_period_updated_del <= rr_period_updated;
     end
     default : begin
-        r_peak_sample_num_prev <= r_peak_sample_num_prev;
-        r_peak_sample_num <= r_peak_sample_num;
+        rpeak_sample_num_prev <= rpeak_sample_num_prev;
+        rpeak_sample_num <= rpeak_sample_num;
         o_rr_period <= o_rr_period;
-        r_peak_sample_updated <= 1'b0;
-        o_rr_period_updated <= 1'b0;
+        rr_period_updated <= 1'b0;
+        rr_period_updated_del <= rr_period_updated;
         end
     endcase
     end
@@ -188,10 +191,10 @@ function logic [DATA_WIDTH-1:0] update_th(  input logic [DATA_WIDTH-1:0] qrs_thr
 endfunction
 
 
-function logic [DATA_WIDTH-1:0] calc_rr_period( input logic [CTR_WIDTH-1:0] r_peak_sample_num_prev,
-                                                input logic [CTR_WIDTH-1:0] r_peak_sample_num,
+function logic [DATA_WIDTH-1:0] calc_rr_period( input logic [CTR_WIDTH-1:0] rpeak_sample_num_prev,
+                                                input logic [CTR_WIDTH-1:0] rpeak_sample_num,
                                                 input logic [DATA_WIDTH-1:0] rr_period );
-    return r_peak_sample_num_prev ? (r_peak_sample_num - r_peak_sample_num_prev) : rr_period;
+    return rpeak_sample_num_prev ? (rpeak_sample_num - rpeak_sample_num_prev) : rr_period;
 endfunction
 
 endmodule

@@ -1,3 +1,5 @@
 /fpga/build/
+tools/mit_bih_arrhythmia_database/*
+tools/rpd_modules/__pycache__*
 vivado/*
 !.gitignore
