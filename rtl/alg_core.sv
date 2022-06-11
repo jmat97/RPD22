@@ -33,7 +33,6 @@ logic signed [DATA_WIDTH-1:0] abs_diff_short_max, qrs_threshold;
 logic signed ma_short_valid, ma_long_valid;
 logic signed abs_diff_short_valid, abs_diff_long_valid;
 logic signed abs_diff_short_max_valid;
-logic [CTR_WIDTH-1:0] rr_period;
 logic qrs_win_state, abs_diff_long_extremum_found, refractory_win_active, qrs_search_en;
 
 assign o_ma_long_valid = ma_long_valid;

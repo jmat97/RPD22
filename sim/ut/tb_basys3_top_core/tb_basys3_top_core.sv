@@ -5,6 +5,8 @@ module tb_basys3_top_core();
 import uart_pkg::*;
 import alg_pkg::*;
 
+`define EMULATE_UART
+
 parameter CLOCK_PERIOD = 10; // in ns
 parameter NR_OF_SAMPLES = 650000;
 parameter DATA_WIDTH = 11;
@@ -33,19 +35,16 @@ logic signed [DATA_WIDTH-1:0] sample_in;
 
 logic sin, sout;
 logic clk_io;
+logic [15:0]    led, sw;
 
+//logic   tx_data_valid = u_top_rpd_basys_3.u_top_core.tx_data_valid;
+//logic   rx_data_valid = u_top_rpd_basys_3.u_top_core.rx_data_valid;
+//byte    tx_data = u_top_rpd_basys_3.u_top_core.tx_data;
+//byte    rx_data = u_top_rpd_basys_3.u_top_core.rx_data;
 rst_if u_rst_if (
     .rst_n,
     .clk(clk_io)
 );
-
-/*
-always @ (posedge clk) begin
-    sample_counter++;
-    if (sample_counter == (NR_OF_SAMPLES+10))
-    $finish;
-end
-*/
 
 mitbih_read_to_mem #(
     .PATH(PATH),
@@ -53,9 +52,6 @@ mitbih_read_to_mem #(
     .DATA_WIDTH(DATA_WIDTH)
     )
     u_mitbih_read_to_mem();
-
-logic [15:0]    led;
-logic [15:0]    sw;
 
 top_rpd_basys_3 u_top_rpd_basys_3(
     .led,
@@ -72,7 +68,6 @@ top_rpd_basys_3 u_top_rpd_basys_3(
     .sck_spy()
 );
 
-
 /**
  * Test
  */
@@ -82,15 +77,16 @@ initial begin
     sin <= 1'b1;
     u_rst_if.init();
     u_rst_if.reset();
-
+    u_top_rpd_basys_3.u_top_core.rx_data_valid = 1'b0;
+    $display("post reset");
     //send_ecg_value(mitbih_data);
-    #100;
+    #600;
     read_reg(UART_SR_OFFSET, read_byte);
 
     //send_ecg_value(11'd1011);
 
     //$display("%x", read_byte);
-    for (int i = 0; i < 390; ++i) begin
+    for (int i = 0; i < 2000; ++i) begin
         send_ecg_value(u_mitbih_read_to_mem.recording_file[i]);
     end
 
@@ -106,8 +102,6 @@ initial begin
     read_reg(UART_DOUTM_OFFSET, datam);
     read_reg(UART_DOUTH_OFFSET, datah);
     read_reg(UART_SR_OFFSET, read_byte);
-
-    send_bit_to_uart(1'b1);
 
     //send_ecg_value(2047);
     //read_reg(UART_SR_OFFSET, read_byte);
@@ -170,61 +164,33 @@ task read_reg();
     output  byte        rdata;
 begin
     send_byte_to_uart({4'b0,raddr,1'b0});
+    $display("addr sent ");
     read_byte_from_uart(rdata);
-end
-endtask
-
-
-task send_bit_to_uart();
-    input   logic   data_bit;
-begin
-    sin <= data_bit;
-    #(BIT_PERIOD);
-end
-endtask
-
-task read_bit_from_uart();
-    output  logic   data_bit;
-begin
-    #(BIT_PERIOD/2);
-    data_bit <= sout;
-    #(BIT_PERIOD/2);
+    $display("byte read ");
 end
 endtask
 
 task send_byte_to_uart();
     input   byte    data;
-begin
-    send_bit_to_uart(1'b0);
-    for (int i = 0; i < 8; ++i)
-        send_bit_to_uart(data[i]);
-    send_bit_to_uart(1'b1);
-
-end
+    @(posedge clk_io)
+    begin
+        u_top_rpd_basys_3.u_top_core.rx_data_valid <= 1'b1;
+        u_top_rpd_basys_3.u_top_core.rx_data <= data;
+    end
+    @(posedge clk_io)
+    begin
+        u_top_rpd_basys_3.u_top_core.rx_data_valid <= 1'b0;
+        u_top_rpd_basys_3.u_top_core.rx_data <= data;
+    end
 endtask
 
 task read_byte_from_uart();
     output  byte    data;
 begin
-    logic start_bit, stop_bit;
-    @(negedge sout);
-    read_bit_from_uart(start_bit);
-    for (int i = 0; i < 8; ++i)
-        read_bit_from_uart(data[i]);
-    read_bit_from_uart(stop_bit);
+    @(posedge u_top_rpd_basys_3.u_top_core.tx_data_valid);
+    if(u_top_rpd_basys_3.u_top_core.tx_data_valid)
+        data = u_top_rpd_basys_3.u_top_core.tx_data;
 end
 endtask
 
 endmodule
-
-
-/*
-    $finish;
-
-UART_CR_OFFSET =
-UART_SR_OFFSET =
-UART_DINL_OFFSET
-UART_DINH_OFFSET
-UART_DOUTL_OFFSET
-UART_DOUTH_OFFSET
-    */

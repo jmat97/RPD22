@@ -33,18 +33,6 @@ module uart (
     output logic        rx_error
 );
 
-
-/**
- * Local variables and signals
- */
-
-
-
-
-/**
- * Signals assignments
- */
-
 /**
  * Submodules placement
  */
@@ -77,18 +65,5 @@ uart_receiver u_uart_receiver (
     .sck_rising_edge,
     .sin
 );
-
-/**
- * Tasks and functions definitions
- */
-
-/**
- * Properties and assertions
- */
-
-
-/**
- * Module internal logic
- */
 
 endmodule

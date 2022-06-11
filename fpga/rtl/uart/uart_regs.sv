@@ -58,6 +58,8 @@ assign o_alg_en = regs.cr.en;
 assign o_src_sel = ecg_src'(regs.cr.src_sel);
 assign o_ecg_value_vld = regs.din_vld;
 
+//sample_num   rpeak_sample_num;
+
 /**
  * Tasks and functions definitions
  */

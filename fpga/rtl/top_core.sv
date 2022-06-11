@@ -48,7 +48,7 @@ logic fifo_full, fifo_empty, fifo_rdata_valid, fifo_data_req;
 ecg_sample fifo_rdata;
 ecg_src ecg_data_src;
 logic alg_rst;
-logic dout_fifo_pop, new_record;
+logic dout_fifo_pop, new_record, dout_data_updated;
 logic [DATA_WIDTH-1:0]  din_fifo_rdata, ecg_signal, ecg_value;
 logic [CTR_WIDTH-1:0]   dout_fifo_rdata, rpeak_sample_num, rr_period;
 logic [CTR_WIDTH-1:0]   ctr;
@@ -95,20 +95,27 @@ clk_divider #(
         .o_clk_div(clk_360Hz)   // output clock
     );
 
+`define EMULATE_UART
 
-uart u_uart(
-    .sin(i_sin),
-    .sout(o_sout),
-    .clk(i_clk_100MHz),
-    .rst_n(i_nrst),
-    .tx_data_valid,
-    .tx_data,
-    .rx_data_valid,
-    .rx_data,
-    .tx_busy,
-    .rx_busy,
-    .rx_error
-);
+`ifdef EMULATE_UART
+    assign o_sout = 1'b1;
+`else
+    uart u_uart(
+        .sin(i_sin),
+        .sout(o_sout),
+        .clk(i_clk_100MHz),
+        .rst_n(i_nrst),
+        .tx_data_valid,
+        .tx_data,
+        .rx_data_valid,
+        .rx_data,
+        .tx_busy,
+        .rx_busy,
+        .rx_error
+    );
+`endif
+
+
 
 command_manager u_command_manager(
     .i_clk(i_clk_100MHz),
@@ -204,7 +211,7 @@ alg_core #(
     .i_ecg_signal(ecg_signal),
     .i_ecg_signal_valid(ecg_signal_valid),
     .o_rr_period(rr_period),
-    .o_rr_period_updated(out_data_updated),
+    .o_rr_period_updated(dout_data_updated),
     .o_rpeak_location(rpeak_sample_num),
     .i_ctr(ctr),
     .o_ma_long_valid(ma_long_valid),
@@ -223,8 +230,8 @@ fifo #(
     .full(dout_fifo_full),
     .empty(dout_fifo_empty),
     .rdata(dout_fifo_rdata),
-    .rdata_valid(dout_fifo_rdata_valid),
-    .push(out_data_updated),
+    .rdata_valid(),
+    .push(dout_data_updated),
     .pop(dout_fifo_pop),
     .wdata(rpeak_sample_num)
 );

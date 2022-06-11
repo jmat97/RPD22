@@ -123,7 +123,7 @@ assign rwaddr = reg_rwaddr'(i_rx_data[3:1]);
                 o_tx_data <= 8'b0;
                 o_tx_data_valid <= 1'b0;
                 o_rwaddr <= rwaddr;
-                o_fifo_fetch <= (rwaddr == UART_DOUTL_OFFSET);
+                o_fifo_fetch <= 1'b0;
             end
             GET_DATA:   begin
                 o_rd_req <= o_rd_req;
@@ -141,7 +141,7 @@ assign rwaddr = reg_rwaddr'(i_rx_data[3:1]);
                 o_tx_data <= i_read_reg;
                 o_tx_data_valid <= 1'b1;
                 o_rwaddr <= o_rwaddr;
-                o_fifo_fetch <= 1'b0;
+                o_fifo_fetch <=(o_rwaddr == UART_DOUTH_OFFSET);
             end
             READ_REG:   begin
                 o_rd_req <= 1'b0;

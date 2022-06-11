@@ -43,7 +43,7 @@ assign o_alg_active = state != INIT;
  */
 always_comb begin
     case (state)
-    INIT: ctr_init_target_nxt = i_ctr + 'd100; // 3s worth of samples
+    INIT: ctr_init_target_nxt = i_ctr + 'd1080; // 3s worth of samples
     default: ctr_init_target_nxt = ctr_init_target_nxt;
     endcase
 end
@@ -131,11 +131,11 @@ end
  */
 always @ (posedge i_clk)begin
     if (!i_nrst) begin
-        rpeak_sample_num_prev <= 11'b0;
-        rpeak_sample_num <= 11'b0;
-        o_rr_period <= 11'b0;
+        rpeak_sample_num_prev <= 22'b0;
+        rpeak_sample_num <= 22'b0;
+        o_rr_period <= 22'b0;
         rr_period_updated <= 1'b0;
-        rr_period_updated_del <= 22'b0;
+        rr_period_updated_del <= 1'b0;
     end
     else begin
     case (state)
@@ -191,9 +191,9 @@ function logic [DATA_WIDTH-1:0] update_th(  input logic [DATA_WIDTH-1:0] qrs_thr
 endfunction
 
 
-function logic [DATA_WIDTH-1:0] calc_rr_period( input logic [CTR_WIDTH-1:0] rpeak_sample_num_prev,
+function logic [CTR_WIDTH-1:0] calc_rr_period( input logic [CTR_WIDTH-1:0] rpeak_sample_num_prev,
                                                 input logic [CTR_WIDTH-1:0] rpeak_sample_num,
-                                                input logic [DATA_WIDTH-1:0] rr_period );
+                                                input logic [CTR_WIDTH-1:0] rr_period );
     return rpeak_sample_num_prev ? (rpeak_sample_num - rpeak_sample_num_prev) : rr_period;
 endfunction
 
