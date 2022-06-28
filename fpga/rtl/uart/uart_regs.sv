@@ -36,7 +36,7 @@ module uart_regs (
     output byte         o_read_data,
     output ecg_sample   o_ecg_value,
     output logic        o_ecg_value_vld,
-    output logic        o_alg_rst,
+    output logic        o_alg_nrst,
     output logic        o_alg_en,
     output ecg_src      o_src_sel
 );
@@ -53,7 +53,7 @@ uart_regs_t regs, regs_nxt;
  * Signals assignments
  */
 assign o_ecg_value = {regs.dinhr,regs.dinlr};
-assign o_alg_rst = regs.cr.rst;
+assign o_alg_nrst = !(regs.cr.rst);
 assign o_alg_en = regs.cr.en;
 assign o_src_sel = ecg_src'(regs.cr.src_sel);
 assign o_ecg_value_vld = regs.din_vld;
@@ -100,6 +100,7 @@ end
 
 always_comb begin
     regs_nxt = regs;
+    regs_nxt.cr.rst = (regs.cr.rst) ? 1'b0 : regs.cr.rst; // clear reset
     if (i_wr_req) begin
         case (i_rwaddr)
         UART_CR_OFFSET:     regs_nxt.cr = i_write_data;

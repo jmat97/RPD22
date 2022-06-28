@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from encodings import utf_8
-import errno, queue, signal, sys, threading, time
+import errno, queue, signal, sys, threading, time, io, csv
 from unittest import case
 from rpd_modules.serial_interface import rpd_serial_interface
 from rpd_modules.regs import *
@@ -24,12 +24,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class rpd_controller:
-
     output_res = np.array([], dtype=np.uint32)
-
     def __init__(self):
         self.close_requested = 0
-        self.serial_interface = rpd_serial_interface('COM6', 115200, 1)
+        self.serial_interface = rpd_serial_interface('COM6', 250000, 1)
+        self.alg_reset()
+        self.sel_alg_state(alg_state.ENABLED)
+        self.sel_src(sig_src.UART)
 
     def addr_to_frame(self, addr, tran_type ):
         if(isinstance(addr,rpd_reg_addr) and isinstance(tran_type, transaction_type)):
@@ -115,71 +116,50 @@ class rpd_controller:
             control_reg = control_reg & ~CR_field.EN.value
         self.write_CR([control_reg])
 
+    def alg_reset(self):
+        control_reg = self.read_CR()
+        control_reg = control_reg | CR_field.RST.value
+        self.write_CR([control_reg])
+
     def collect_dout(self):
-        sr = rpd_controller.read_SR()
-        #print(rpd_controller.is_tx_fifo_e(sr))
-        while rpd_controller.is_tx_fifo_e(sr) ==0:
-            self.output_res = np.append(self.output_res,  rpd_controller.read_DOUT())
-            #print(self.output_res)
-            sr = rpd_controller.read_SR()
-            if rpd_controller.is_tx_fifo_e(sr):
+        sr = self.read_SR()
+        while self.is_tx_fifo_e(sr) == 0:
+            self.output_res = np.append(self.output_res,  self.read_DOUT())
+            sr = self.read_SR()
+            if self.is_tx_fifo_e(sr):
                 break
 
+    def run_alg(self, record):
+        for i in range(record.sig_len):
+            self.write_DIN(record.d_signal[i][0])
+            if ((i % 100000) ==0):
+                self.collect_dout()
+        self.collect_dout()
 
+    def report_sr(self, sr):
+        print("Algorithm status: {:b}".format(rpd_controller.is_alg_active(sr)))
+        print("Threshold status: {:b}".format(rpd_controller.is_th_initialised(sr)))
+        print("TX fifo E status: {:b}".format(rpd_controller.is_tx_fifo_e(sr)))
+
+def write_res_to_file(start_time, record):
+    with io.open('results/' + start_time + '_{}'.format(record.record_name) +'.csv', mode='w', newline='') as file:
+        writer = csv.writer(file)
+        for i in range(len(rpd_controller.output_res)):
+            writer.writerow([i, rpd_controller.output_res[i]])
 
 
 if __name__ == "__main__":
     rpd_controller = rpd_controller()
+    recordings = [101]
 
-    path = 'tools/mit_bih_arrhythmia_database/100'
-    record = wfdb.rdrecord(path)
-    record.adc(inplace=True)
-
-    #for i in range(record.sig_len):
-    #    data = record.d_signal[i][0]
-    #    print(data)
-    print("hedsfsllo")
-    #arr = (1024).to_bytes()
-    #ecg_valueL = bytes([255])
-    rpd_controller.sel_src(sig_src.UART)
-    #rpd_controller.sel_alg_state(alg_state.ENABLED)
-    #rpd_controller.sel_alg_state(alg_state.DISABLED)
-    #time.sleep(5)
-    sr = rpd_controller.read_SR()
-    print("{:b}".format(sr))
-    print("Algorithm status: {:b}".format(rpd_controller.is_alg_active(sr)))
-    print("Threshold status: {:b}".format(rpd_controller.is_th_initialised(sr)))
-    print("TX fifo E status: {:b}".format(rpd_controller.is_tx_fifo_e(sr)))
-    for i in range(700):
-        rpd_controller.write_DIN(record.d_signal[i][0])
-        if (i % 300 == 0):
-            rpd_controller.collect_dout()
-            print("_")
-        #print(rpd_controller.is_rx_fifo_e(rpd_controller.read_SR()))
-    print("outside")
-    rpd_controller.collect_dout()
-    sr = rpd_controller.read_SR()
-    #print(rpd_controller.collect_dout.size)
-    print("{:b}".format(sr))
-    print("Algorithm status: {:b}".format(rpd_controller.is_alg_active(sr)))
-    print("Threshold status: {:b}".format(rpd_controller.is_th_initialised(sr)))
-    print("TX fifo E status: {:b}".format(rpd_controller.is_tx_fifo_e(sr)))
-    #sr = rpd_controller.read_SR()
-    #print("DOUT: {:h}",rpd_controller.read_DOUT())
-    #print("TX fifo E status: {:b}".format(rpd_controller.is_tx_fifo_e(sr)))
-    #sr = rpd_controller.read_SR()
-    #print("DOUT: {:h}",rpd_controller.read_DOUT())
-    #print("TX fifo E status: {:b}".format(rpd_controller.is_tx_fifo_e(sr)))
-    #time.sleep(5)
-    #print(rpd_controller.addr_to_frame(rpd_reg_addr.SR,transaction_type.R))
-    #print(rpd_controller.addr_to_frame(rpd_reg_addr.SR,transaction_type.W))
-
-    #print(rpd_controller.addr_to_frame(rpd_reg_addr.DINL,transaction_type.R))
-    #print(rpd_controller.addr_to_frame(rpd_reg_addr.DINL,transaction_type.W))
-
-
-    #for i in range(255):
-        #rpd_controller.write([i])
-        #time.sleep(1)
+    for j in range(len(recordings)):
+        path = 'tools/mit_bih_arrhythmia_database/{}'.format(recordings[j])
+        print(path)
+        record = wfdb.rdrecord(path)
+        record.adc(inplace=True)
+        start_time = time.strftime("%Y%m%d%H%M%S")
+        rpd_controller.run_alg(record)
+        print(rpd_controller.output_res)
+        write_res_to_file(start_time,record)
 
 

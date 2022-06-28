@@ -79,7 +79,7 @@ typedef struct packed {
 } uart_doutm_t;
 
 typedef struct packed {
-    logic [2:0]  out_data_h;
+    logic [4:0]  out_data_h;
 } uart_douth_t;
 
 typedef struct packed {

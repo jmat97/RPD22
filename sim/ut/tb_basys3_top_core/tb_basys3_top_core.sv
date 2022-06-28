@@ -37,10 +37,6 @@ logic sin, sout;
 logic clk_io;
 logic [15:0]    led, sw;
 
-//logic   tx_data_valid = u_top_rpd_basys_3.u_top_core.tx_data_valid;
-//logic   rx_data_valid = u_top_rpd_basys_3.u_top_core.rx_data_valid;
-//byte    tx_data = u_top_rpd_basys_3.u_top_core.tx_data;
-//byte    rx_data = u_top_rpd_basys_3.u_top_core.rx_data;
 rst_if u_rst_if (
     .rst_n,
     .clk(clk_io)
@@ -82,26 +78,19 @@ initial begin
     //send_ecg_value(mitbih_data);
     #600;
     read_reg(UART_SR_OFFSET, read_byte);
+    write_reg(CR,1<<1);
 
     //send_ecg_value(11'd1011);
 
     //$display("%x", read_byte);
-    for (int i = 0; i < 2000; ++i) begin
+    for (int i = 0; i < 650000; ++i) begin
         send_ecg_value(u_mitbih_read_to_mem.recording_file[i]);
+        if(i % 25000 == 0) begin
+            collect_dout();
+        end
     end
 
-    read_reg(UART_SR_OFFSET, read_byte);
-    read_reg(UART_DOUTL_OFFSET, datal);
-    read_reg(UART_DOUTM_OFFSET, datam);
-    read_reg(UART_DOUTH_OFFSET, datah);
-    read_reg(UART_SR_OFFSET, read_byte);
-
-
-
-    read_reg(UART_DOUTL_OFFSET, datal);
-    read_reg(UART_DOUTM_OFFSET, datam);
-    read_reg(UART_DOUTH_OFFSET, datah);
-    read_reg(UART_SR_OFFSET, read_byte);
+    collect_dout();
 
     //send_ecg_value(2047);
     //read_reg(UART_SR_OFFSET, read_byte);
@@ -134,20 +123,28 @@ begin
 end
 endtask
 
-task receive_r_peak_location();
+task read_DOUT();
     output logic [CTR_WIDTH-1:0] r_peak_location;
 begin
     byte datal, datam, datah;
-    uart_sr_t status_reg;
-
-    read_reg(UART_SR_OFFSET, status_reg);
-    if( !(status_reg.tx_fifo_empty) ) begin
-        read_reg(UART_DOUTL_OFFSET, datal);
-        read_reg(UART_DOUTM_OFFSET, datam);
-        read_reg(UART_DOUTH_OFFSET, datah);
-    end
+    read_reg(UART_DOUTL_OFFSET, datal);
+    read_reg(UART_DOUTM_OFFSET, datam);
+    read_reg(UART_DOUTH_OFFSET, datah);
     r_peak_location = {datah, datam, datal};
 end
+endtask
+
+task collect_dout();
+    uart_sr_t sr;
+    sample_num rpeak_location;
+    read_reg(UART_SR_OFFSET, sr);
+    while (sr.tx_fifo_empty == 0) begin
+        read_DOUT(rpeak_location);
+        read_reg(UART_SR_OFFSET, sr);
+        if (sr.tx_fifo_empty) begin
+            break;
+        end
+    end
 endtask
 
 task write_reg();

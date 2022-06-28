@@ -47,7 +47,7 @@ logic   ma_long_valid,
 logic fifo_full, fifo_empty, fifo_rdata_valid, fifo_data_req;
 ecg_sample fifo_rdata;
 ecg_src ecg_data_src;
-logic alg_rst;
+logic alg_nrst, nrst_core;
 logic dout_fifo_pop, new_record, dout_data_updated;
 logic [DATA_WIDTH-1:0]  din_fifo_rdata, ecg_signal, ecg_value;
 logic [CTR_WIDTH-1:0]   dout_fifo_rdata, rpeak_sample_num, rr_period;
@@ -67,20 +67,8 @@ logic clk_360Hz;
 /**
  * Signals assignments
  */
-
-assign new_record = 1'b0;
-assign o_adc_en = 1'b1;
-//assign led[7] = !gpio_bus.oe_n[15] ? gpio_bus.dout[15] : 1'b0;  /* bootloader finished */
-//assign led[6:4] = 3'b0;
-//assign led[3] = !gpio_bus.oe_n[3] ? gpio_bus.dout[3] : 1'b0;
-//assign led[2] = !gpio_bus.oe_n[2] ? gpio_bus.dout[2] : 1'b0;
-//assign led[1] = !gpio_bus.oe_n[1] ? gpio_bus.dout[1] : 1'b0;
-//assign led[0] = !gpio_bus.oe_n[0] ? gpio_bus.dout[0] : 1'b0;
-
-//assign gpio_bus.din[17] = 1'b0;                                 /* codeload skipping */
-//assign gpio_bus.din[16] = sw;                                   /* codeload source */
-//assign gpio_bus.din[3:0] = led[3:0];
-
+assign o_adc_en = (ecg_data_src == ECG_SRC_ADC);
+assign nrst_core = i_nrst & alg_nrst;
 /**
  * Submodules placement
  */
@@ -151,7 +139,7 @@ uart_regs u_uart_regs(
     .o_read_data(read_reg),
     .o_ecg_value(ecg_value),
     .o_ecg_value_vld(ecg_value_vld),
-    .o_alg_rst(alg_rst),
+    .o_alg_nrst(alg_nrst),
     .o_alg_en(alg_en),
     .o_src_sel(ecg_data_src)
 );
@@ -161,7 +149,7 @@ fifo #(
     .WIDTH(DATA_WIDTH)
 ) u_din_fifo (
     .clk(i_clk_100MHz),
-    .rst_n(i_nrst),
+    .rst_n(nrst_core),
     .full(din_fifo_full),
     .empty(din_fifo_empty),
     .rdata(din_fifo_rdata),
@@ -177,7 +165,7 @@ sample_mgmt #(
     )
     sample_mgmt_inst (
         .i_clk(i_clk_100MHz),
-        .i_nrst(i_nrst),
+        .i_nrst(nrst_core),
         .i_clk_adc_convst(clk_360Hz),
         .i_ecg_src(ecg_data_src),
         .i_new_record(new_record),
@@ -206,8 +194,8 @@ alg_core #(
     )
     alg_core_inst(
     .i_clk(i_clk_100MHz),
-    .i_nrst(i_nrst),
-    .i_ce(1'b1),
+    .i_nrst(nrst_core),
+    .i_ce(alg_en),
     .i_ecg_signal(ecg_signal),
     .i_ecg_signal_valid(ecg_signal_valid),
     .o_rr_period(rr_period),
@@ -226,7 +214,7 @@ fifo #(
     .WIDTH(CTR_WIDTH)
 ) u_dout_fifo (
     .clk(i_clk_100MHz),
-    .rst_n(i_nrst),
+    .rst_n(nrst_core),
     .full(dout_fifo_full),
     .empty(dout_fifo_empty),
     .rdata(dout_fifo_rdata),

@@ -14,7 +14,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from enum import Enum
 
-
 class rpd_reg_addr(Enum):
     CR = b'\x00'
     SR = b'\x01'

@@ -4,11 +4,12 @@ module tb_alg_core();
 
 parameter CLOCK_PERIOD = 10; // in ns
 parameter NR_OF_SAMPLES = 650000;
-parameter PATH = "100.csv";
+// parameter recording_num = "100";
+// parameter path = {recording_num,".csv"};
 parameter DATA_WIDTH = 11;
 parameter CTR_WIDTH = 22;
 parameter DATA_OFFSET = 1024;
-
+parameter RECORDING_COUNT = 48;
 //Algorithm parameters
 parameter N_SHORT = 16;
 parameter N_LONG  = 32;
@@ -18,29 +19,80 @@ logic nrst = 1'b0, ce =1'b1;
 logic sig_valid, mitbih_data_req;
 int sample_counter = 0;
 logic [CTR_WIDTH-1:0] ctr = 0;
-logic [CTR_WIDTH-1:0] r_peak_sample_num;
+logic [CTR_WIDTH-1:0] r_peak_sample_num, r_peak_count, rr_period;
 
-logic [DATA_WIDTH-1:0] mitbih_data, rr_period;
+logic [DATA_WIDTH-1:0] mitbih_data;
 logic rr_period_updated;
 logic signed [DATA_WIDTH-1:0] sample_in;
+logic alg_done = 1'b0, new_rpeak = 1'b0;
 
+string recordings [RECORDING_COUNT] = {"100", "101", "102", "103", "104", "105", "106", "107", "108", "109", "111", "112", "113", "114", "115", "116", "117", "118", "119", "121", "122", "123", "124", "200", "201", "202", "203", "205", "207", "208", "209", "210", "212", "213", "214", "215", "217", "219", "220", "221", "222", "223", "228", "230", "231", "232", "233", "234"};
+string recording_num = "100";
+string path = {recording_num, ".csv"};
 
 initial begin
-    #10 nrst  <= 1'b1;
-    //#10 ce    <= 1'b1;
+    r_peak_count = '0;
+    for (int i = 0; i<RECORDING_COUNT; i++) begin
+        recording_num = recordings [i];
+        path = {recording_num, ".csv"};
+        #10 nrst  = 1'b0;
+        #50 nrst  = 1'b1;
+        $display("Current recording start: %s",path);
+        write_to_file(recording_num);
+        $display("stop");
+    end
+
+    $finish;
+
 end
 
 always #(CLOCK_PERIOD/2) clk = ~clk;
 
+always @(posedge rr_period_updated) begin
+    //$display(r_peak_sample_num);
+    new_rpeak = 1'b1;
+end
+
+task write_to_file(string recording_num);
+    int fd;
+    string filename = {"../../../../../results/",recording_num,".txt"};
+    fd = $fopen(filename, "wb");
+    if (fd == 0) begin
+        $finish;
+    end
+    while (1) begin
+        @(posedge rr_period_updated, posedge alg_done) begin
+            if (alg_done) begin
+                break;
+            end
+            $fwrite(fd,"%d,%d\x0d\n",r_peak_count,r_peak_sample_num);
+            r_peak_count +=1;
+            new_rpeak = 1'b0;
+        end
+    end
+    r_peak_count = 0;
+    alg_done = 0;
+    $display("end of file writing block");
+    $fclose(fd);
+endtask
+
+
+
+always @(posedge din_fifo_empty) begin
+    if(ctr != 0 ) begin
+        #1000 alg_done = 1'b1;
+    end
+end
+
 
 
 mitbih_read #(
-    .PATH(PATH),
     .LENGTH(NR_OF_SAMPLES),
     .DATA_WIDTH(DATA_WIDTH),
     .CTR_WIDTH(CTR_WIDTH)
     )
     mitbih_read_inst(
+    .path(path),
     .clk(clk),
     .nrst(nrst),
     .counter(),
@@ -121,6 +173,7 @@ alg_core #(
     .o_alg_active()
 
 );
+
 
 
 endmodule
