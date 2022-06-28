@@ -85,8 +85,8 @@ maximum_hold #(
         .i_nrst,
         .i_ce,
         .i_signal(abs_diff_short),
-        .o_signal_max(abs_diff_short_max),
         .i_signal_valid(abs_diff_short_valid),
+        .o_signal_max(abs_diff_short_max),
         .o_signal_max_valid(abs_diff_short_max_valid)
     );
 

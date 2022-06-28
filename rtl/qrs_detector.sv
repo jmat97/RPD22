@@ -5,7 +5,7 @@ module	qrs_detector #(
 		parameter DATA_WIDTH = 11,
 		parameter CTR_WIDTH = 22
 	) (
-		input	logic	                           i_clk,	
+		input	logic	                           i_clk,
 		input	logic	                           i_nrst,
 		input	logic	                           i_ce,
 		input   logic [CTR_WIDTH-1:0]              i_ctr,
@@ -17,15 +17,14 @@ module	qrs_detector #(
 	);
 
     logic ctr_start;
-    //assign ctr_start = (i_signal_in > i_threshold)? 1 : 0;
 
 	always @( posedge i_clk) begin
-		if ( (i_signal_in > i_threshold) &&  
+		if ( (i_signal_in > i_threshold) &&
 			(!o_qrs_win_active) &&
 			(!i_refractory_win_active) &&
 			i_qrs_search_en ) begin
 			ctr_start <= 1;
-		end 
+		end
 		else begin
 			ctr_start <= 0;
 		end
@@ -35,14 +34,14 @@ module	qrs_detector #(
 		.COUNT_VALUE(72),
         .CTR_WIDTH(CTR_WIDTH)
     ) qrs_win_counter (
-		.i_clk(i_clk),	
+		.i_clk(i_clk),
 		.i_nrst(i_nrst),
 		.i_ce(i_ce),
 		.i_ctr(i_ctr),
 		.i_start(ctr_start),
         .o_active(o_qrs_win_active)
 	);
-	
+
 
 
 endmodule

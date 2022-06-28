@@ -12,7 +12,7 @@ module	alg_fsm #(
         input   logic                               i_abs_diff_short_valid,
         input   logic                               i_extremum_found,
         output  logic                               o_qrs_search_en,
-        output  logic [DATA_WIDTH-1:0]              o_rr_period,
+        output  logic [CTR_WIDTH-1:0]               o_rr_period,
         output  logic                               o_rr_period_updated,
         output  logic [CTR_WIDTH-1:0]               o_rpeak_location,
         output  logic [DATA_WIDTH-1:0]              o_qrs_threshold,
@@ -106,7 +106,7 @@ always @ (posedge i_clk)begin
     ALG_UPDATE_1 : begin
         qrs_threshold_prv <= o_qrs_threshold;
         o_qrs_threshold <= update_th(o_qrs_threshold, i_abs_diff_short_max);
-        $display("%d,%d, %d",qrs_threshold_prv, i_abs_diff_short_max, o_qrs_threshold);
+        //$display("%d,%d, %d",qrs_threshold_prv, i_abs_diff_short_max, o_qrs_threshold);
         o_th_initialised <= o_th_initialised;
         th_updated <= 1'b0;
     end

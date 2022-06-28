@@ -52,24 +52,19 @@ always_ff @ (posedge i_clk) begin
         o_extremum_found <= 1'b0;
     end
 end
-/**
- *
- */
-	
-    counter_fsm #(
-		.COUNT_VALUE(72),
-        .CTR_WIDTH(CTR_WIDTH)
-    ) refractory_win_counter (
-		.i_clk(i_clk),	
-		.i_nrst(i_nrst),
-		.i_ce(i_ce),
-		.i_ctr(i_ctr),
-		.i_start(o_extremum_found),
-        .o_active(o_refractory_win_active)
-	);
-/**
- *
- */
+
+counter_fsm #(
+    .COUNT_VALUE(72),
+    .CTR_WIDTH(CTR_WIDTH)
+) refractory_win_counter (
+    .i_clk(i_clk),
+    .i_nrst(i_nrst),
+    .i_ce(i_ce),
+    .i_ctr(i_ctr),
+    .i_start(o_extremum_found),
+    .o_active(o_refractory_win_active)
+);
+
 function logic extremum_found(  input logic qrs_win_active,
                                 input logic refractory_win_active,
                                 input logic signed [DATA_WIDTH-1:0] diff_prev,

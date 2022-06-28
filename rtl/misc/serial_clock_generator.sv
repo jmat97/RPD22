@@ -54,7 +54,7 @@ end
 always_comb begin
     sck_nxt = 1'b0;
     rising_edge_nxt = 1'b0;
-    counter_target_nxt = 9'd27;
+    counter_target_nxt = 9'd12;
     counter_nxt = 9'b0;
 
     if (en) begin
